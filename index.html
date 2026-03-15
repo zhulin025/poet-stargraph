@@ -91,6 +91,14 @@
 
     <!-- 3D 图 -->
     <div id="graph"></div>
+    
+    <!-- 2D 降级版本（3D 失败时显示） -->
+    <div id="graph-2d" style="display:none;position:fixed;inset:0;background:#000011;z-index:50;">
+        <div style="position:absolute;top:60px;left:0;right:0;text-align:center;color:rgba(255,255,255,0.6);font-size:12px;padding:10px;">
+            📱 已切换到 2D 模式（您的设备不支持 3D 渲染）
+        </div>
+        <svg id="svg-2d" width="100%" height="100%"></svg>
+    </div>
 
     <!-- 底部控制 -->
     <div class="controls">
@@ -276,6 +284,36 @@
 
         // ==================== 图表初始化 ====================
         function initGraph() {
+            console.log('🚀 开始初始化图表...');
+            console.log('设备类型:', isMobile ? '移动端' : '桌面端');
+            console.log('Three.js 版本:', THREE.REVISION);
+            
+            // 检测 WebGL 支持
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (!gl) {
+                    throw new Error('浏览器不支持 WebGL');
+                }
+                console.log('✅ WebGL 支持检测通过');
+            } catch (e) {
+                console.error('❌ WebGL 检测失败:', e);
+                document.getElementById('loading').innerHTML = `
+                    <div style="text-align:center;padding:40px;max-width:400px;">
+                        <h2 style="color:#ef4444;margin-bottom:20px;">❌ WebGL 不支持</h2>
+                        <p style="color:#fff;margin-bottom:20px;">${e.message}</p>
+                        <p style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:20px;">请尝试：</p>
+                        <ul style="text-align:left;color:rgba(255,255,255,0.7);font-size:12px;line-height:1.8;margin-bottom:20px;">
+                            <li>• 使用 Chrome/Safari 浏览器</li>
+                            <li>• 更新浏览器到最新版本</li>
+                            <li>• 检查浏览器设置是否启用 WebGL</li>
+                        </ul>
+                        <button onclick="location.reload()" style="padding:12px 30px;background:#60a5fa;border:none;border-radius:8px;color:#fff;font-size:16px;cursor:pointer;">🔄 重试</button>
+                    </div>
+                `;
+                return;
+            }
+
             const cfg = {
                 nodeRes: isMobile ? 10 : 16,
                 particles: isMobile ? 1 : 2,
@@ -287,6 +325,7 @@
             };
 
             try {
+                console.log('创建 ForceGraph3D 实例...');
                 Graph = ForceGraph3D()(document.getElementById('graph'))
                     .graphData(currentData)
                     .nodeLabel('id')
@@ -345,9 +384,15 @@
                         );
                     })
                     .onEngineStop(() => {
-                        console.log('✅ 渲染完成');
+                        console.log('✅ 引擎停止，渲染完成');
                         document.getElementById('loading').classList.add('hidden');
+                    })
+                    .onBackgroundClick(() => {
+                        console.log('背景点击');
                     });
+                
+                console.log('✅ Graph 对象创建成功');
+                console.log('Graph 方法:', Object.keys(Graph).slice(0, 10));
 
                 // 控制器配置
                 const controls = Graph.controls();
@@ -366,12 +411,31 @@
 
                 document.getElementById('debug').textContent += ' | 图表：✅';
             } catch (err) {
-                console.error('❌ 初始化错误:', err);
+                console.error('❌ 3D 初始化错误:', err);
+                console.error('错误堆栈:', err.stack);
+                
+                // 尝试切换到 2D 模式
+                try {
+                    show2DGraph();
+                    document.getElementById('loading').classList.add('hidden');
+                    return;
+                } catch (e2d) {
+                    console.error('2D 模式也失败:', e2d);
+                }
+                
                 document.getElementById('loading').innerHTML = `
-                    <div style="text-align:center;padding:40px;">
-                        <h2 style="color:#ef4444;margin-bottom:20px;">❌ 初始化失败</h2>
-                        <p style="color:#fff;margin-bottom:20px;">${err.message}</p>
-                        <button onclick="location.reload()" style="padding:12px 30px;background:#60a5fa;border:none;border-radius:8px;color:#fff;font-size:16px;cursor:pointer;">🔄 重试</button>
+                    <div style="text-align:center;padding:40px;max-width:400px;">
+                        <h2 style="color:#ef4444;margin-bottom:20px;">❌ 渲染失败</h2>
+                        <p style="color:#fff;margin-bottom:10px;">${err.message}</p>
+                        <p style="color:rgba(255,255,255,0.5);font-size:11px;margin-bottom:20px;word-break:break-all;">${err.stack || ''}</p>
+                        <p style="color:rgba(255,255,255,0.6);font-size:12px;margin-bottom:20px;">请尝试：</p>
+                        <ul style="text-align:left;color:rgba(255,255,255,0.7);font-size:12px;line-height:1.8;margin-bottom:20px;">
+                            <li>• 刷新页面重试</li>
+                            <li>• 更换 Chrome/Safari 浏览器</li>
+                            <li>• 检查浏览器是否支持 WebGL</li>
+                        </ul>
+                        <button onclick="location.reload()" style="padding:12px 30px;background:#60a5fa;border:none;border-radius:8px;color:#fff;font-size:16px;cursor:pointer;">🔄 刷新重试</button>
+                        <p style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:15px;">如多次失败，请截图发给我</p>
                     </div>
                 `;
             }
@@ -384,6 +448,48 @@
                     loading.classList.add('hidden');
                 }
             }, 8000);
+        }
+
+        // ==================== 2D 降级模式 ====================
+        function show2DGraph() {
+            console.log('🔄 切换到 2D 模式');
+            document.getElementById('graph-2d').style.display = 'block';
+            
+            const svg = document.getElementById('svg-2d');
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            // 简单的力导向布局模拟
+            const nodes = currentData.nodes.map(n => ({
+                ...n,
+                x: centerX + (Math.random() - 0.5) * 400,
+                y: centerY + (Math.random() - 0.5) * 400,
+                vx: 0,
+                vy: 0
+            }));
+            
+            let svgContent = `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // 绘制连线
+            currentData.links.forEach(link => {
+                const src = nodes.find(n => n.id === link.source);
+                const tgt = nodes.find(n => n.id === link.target);
+                if (src && tgt) {
+                    svgContent += `<line x1="${src.x}" y1="${src.y}" x2="${tgt.x}" y2="${tgt.y}" stroke="${src.color}" stroke-width="${Math.sqrt(link.value) * 0.5}" opacity="0.4"/>`;
+                }
+            });
+            
+            // 绘制节点
+            nodes.forEach(node => {
+                const r = Math.max(4, Math.min(node.val / 10, 25));
+                svgContent += `<circle cx="${node.x}" cy="${node.y}" r="${r}" fill="${node.color}" opacity="0.8"><title>${node.id} (${node.val})</title></circle>`;
+                svgContent += `<text x="${node.x}" y="${node.y - r - 2}" text-anchor="middle" fill="#fff" font-size="10">${node.id}</text>`;
+            });
+            
+            svgContent += '</svg>';
+            svg.innerHTML = svgContent;
         }
 
         // ==================== 工具函数 ====================
