@@ -53,18 +53,66 @@
         .debug { margin-top: 8px; color: rgba(255,255,255,0.4); font-size: 10px; font-family: monospace; }
         
         /* 提示框 */
-        .tooltip { position: absolute; background: rgba(0,0,30,0.95); border: 1px solid rgba(100,150,255,0.4); border-radius: 8px; padding: 10px 14px; font-size: 12px; pointer-events: none; z-index: 1000; max-width: 250px; display: none; backdrop-filter: blur(10px); }
+        .tooltip { position: absolute; background: rgba(0,0,30,0.95); border: 1px solid rgba(100,150,255,0.4); border-radius: 8px; padding: 10px 14px; font-size: 12px; pointer-events: none; z-index: 1000; max-width: 250px; display: none; backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
         .tooltip h4 { color: #60a5fa; margin-bottom: 6px; font-size: 14px; }
         .tooltip p { color: rgba(255,255,255,0.8); line-height: 1.4; }
         
+        /* 触控提示 */
+        .touch-hint { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(96,165,250,0.2); border: 1px solid rgba(96,165,250,0.4); border-radius: 20px; padding: 8px 16px; font-size: 11px; color: rgba(255,255,255,0.8); z-index: 90; pointer-events: none; opacity: 0; transition: opacity 0.5s; }
+        .touch-hint.show { opacity: 1; }
+        
         /* 移动端优化 */
         @media (max-width: 480px) {
-            .header h1 { font-size: 14px; }
-            .search-box input { width: 100px; font-size: 12px; }
-            .search-box input:focus { width: 130px; }
-            .dynasty-btn { padding: 4px 10px; font-size: 11px; }
-            .control-btn { padding: 6px 12px; font-size: 11px; }
-            .legend { bottom: 70px; font-size: 10px; max-width: 160px; }
+            .header { height: 50px; padding: 0 12px; }
+            .header h1 { font-size: 13px; }
+            .search-box input { width: 90px; font-size: 12px; padding: 5px 10px; }
+            .search-box input:focus { width: 120px; }
+            .dynasty-btn { padding: 4px 8px; font-size: 11px; }
+            .dynasty-toggle { gap: 2px; padding: 2px; }
+            
+            /* 底部控制栏 - 移动端优化 */
+            .controls { bottom: 10px; gap: 6px; }
+            .control-btn { 
+                padding: 8px 12px; 
+                font-size: 11px;
+                min-height: 40px; /* 触控友好 */
+                min-width: 44px; /* Apple 触控标准 */
+            }
+            
+            /* 图例 - 移动端优化 */
+            .legend { 
+                bottom: 65px; 
+                font-size: 10px; 
+                max-width: 150px;
+                max-height: 200px;
+                padding: 10px;
+            }
+            
+            /* 提示框 - 移动端优化 */
+            .tooltip { 
+                max-width: 200px; 
+                font-size: 11px;
+                padding: 8px 10px;
+            }
+            .tooltip h4 { font-size: 12px; }
+        }
+
+        /* 超小屏幕 */
+        @media (max-width: 360px) {
+            .header h1 { font-size: 12px; }
+            .search-box input { width: 80px; }
+            .search-box input:focus { width: 100px; }
+            .dynasty-btn { padding: 3px 6px; font-size: 10px; }
+            .controls { flex-wrap: wrap; }
+            .control-btn { padding: 6px 10px; font-size: 10px; }
+            .legend { max-width: 130px; }
+        }
+
+        /* 横屏模式优化 */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .header { height: 44px; }
+            .legend { display: none; } /* 横屏时隐藏图例 */
+            .controls { bottom: 8px; }
         }
     </style>
 </head>
@@ -116,6 +164,9 @@
 
     <!-- 提示框 -->
     <div class="tooltip" id="tooltip"></div>
+    
+    <!-- 触控提示（移动端） -->
+    <div class="touch-hint" id="touch-hint">👆 双指缩放 / 单指旋转</div>
 
     <!-- 依赖库 - 国内 CDN 优化 -->
     <script src="https://lib.baomitu.com/three.js/r128/three.min.js"></script>
@@ -259,7 +310,11 @@
         // ==================== 全局变量 ====================
         let Graph, currentData = songData;
         let isRotating = true, isBloom = true, isParticles = true;
-        const isMobile = /Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        
+        // 移动端检测（更准确）
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+            || (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+        const isIOS = /iPad|iPhone|iPod/i.test(navigator.userAgent);
 
         // ==================== 初始化 ====================
         window.addEventListener('load', () => {
@@ -280,6 +335,15 @@
             initGraph();
             updateLegend(currentData);
             bindEvents();
+            
+            // 移动端显示触控提示
+            if (isMobile) {
+                const hint = document.getElementById('touch-hint');
+                if (hint) {
+                    hint.classList.add('show');
+                    setTimeout(() => hint.classList.remove('show'), 4000);
+                }
+            }
         });
 
         // ==================== 图表初始化 ====================
@@ -315,13 +379,14 @@
             }
 
             const cfg = {
-                nodeRes: isMobile ? 10 : 16,
+                nodeRes: isMobile ? 8 : 16, // 移动端降低节点分辨率
                 particles: isMobile ? 1 : 2,
                 particleSpeed: isMobile ? 0.004 : 0.006,
                 charge: isMobile ? -120 : -180,
                 distance: isMobile ? 90 : 120,
                 rotateSpeed: isMobile ? 0.4 : 0.6,
-                nodeSize: isMobile ? 0.8 : 1
+                nodeSize: isMobile ? 0.8 : 1,
+                linkWidth: isMobile ? 1.5 : 2
             };
 
             try {
@@ -335,15 +400,18 @@
                     .nodeThreeObject(node => {
                         const size = (node.val / 15) * cfg.nodeSize;
                         const geometry = new THREE.SphereGeometry(size, cfg.nodeRes, cfg.nodeRes);
+                        
+                        // 移动端简化材质
                         const material = new THREE.MeshPhongMaterial({
                             color: node.color,
                             emissive: node.color,
-                            emissiveIntensity: 0.6,
+                            emissiveIntensity: isMobile ? 0.4 : 0.6,
                             transparent: true,
-                            opacity: 0.95
+                            opacity: isMobile ? 0.9 : 0.95
                         });
                         const mesh = new THREE.Mesh(geometry, material);
                         
+                        // 移动端禁用光晕效果以提升性能
                         if (isBloom && !isMobile) {
                             const glowGeo = new THREE.SphereGeometry(size * 1.3, 8, 8);
                             const glowMat = new THREE.MeshBasicMaterial({
@@ -356,8 +424,8 @@
                         }
                         return mesh;
                     })
-                    .linkWidth(link => Math.sqrt(link.value) * (isMobile ? 0.7 : 1))
-                    .linkOpacity(isMobile ? 0.5 : 0.7)
+                    .linkWidth(link => Math.sqrt(link.value) * cfg.linkWidth)
+                    .linkOpacity(isMobile ? 0.6 : 0.7)
                     .linkColor(link => {
                         const srcColor = link.source.color;
                         const tgtColor = link.target.color;
@@ -366,7 +434,7 @@
                     .linkDirectionalParticles(isParticles ? cfg.particles : 0)
                     .linkDirectionalParticleSpeed(cfg.particleSpeed)
                     .linkDirectionalParticleColor(() => '#60a5fa')
-                    .linkDirectionalParticleWidth(isMobile ? 1.5 : 2)
+                    .linkDirectionalParticleWidth(isMobile ? 2 : 2.5)
                     .d3Force('charge', d3.forceManyBody().strength(cfg.charge))
                     .d3Force('link', d3.forceLink().distance(cfg.distance))
                     .d3Force('collide', d3.forceCollide().radius(node => (node.val / 15) * cfg.nodeSize * 2.5))
@@ -377,10 +445,12 @@
                         showTooltip(node);
                     })
                     .onNodeClick(node => {
+                        // 移动端点击更近的视角
+                        const distance = isMobile ? 1.2 : 1.5;
                         Graph.cameraPosition(
-                            { x: node.x * 1.5, y: node.y * 1.5, z: node.z * 1.5 },
+                            { x: node.x * distance, y: node.y * distance, z: node.z * distance },
                             { x: node.x, y: node.y, z: node.z },
-                            isMobile ? 1500 : 2000
+                            isMobile ? 1000 : 1500
                         );
                     })
                     .onEngineStop(() => {
@@ -399,14 +469,21 @@
                 controls.autoRotate = isRotating;
                 controls.autoRotateSpeed = cfg.rotateSpeed;
                 controls.enableDamping = true;
-                controls.dampingFactor = 0.05;
+                controls.dampingFactor = isMobile ? 0.08 : 0.05; // 移动端阻尼更大，更跟手
                 
                 // 移动端优化
                 if (isMobile) {
-                    controls.rotateSpeed = 1.8;
-                    controls.zoomSpeed = 1.5;
-                    controls.panSpeed = 1.5;
+                    controls.rotateSpeed = 2.0; // 更快的旋转速度
+                    controls.zoomSpeed = 1.8;   // 更快的缩放
+                    controls.panSpeed = 1.8;    // 更快的平移
                     controls.enablePan = true;
+                    
+                    // iOS 优化
+                    if (isIOS) {
+                        // iOS Safari 需要更大的最小/最大缩放
+                        controls.minDistance = 50;
+                        controls.maxDistance = 1000;
+                    }
                 }
 
                 document.getElementById('debug').textContent += ' | 图表：✅';
@@ -541,24 +618,37 @@
 
         // ==================== 事件绑定 ====================
         function bindEvents() {
-            // 搜索
-            document.getElementById('search').addEventListener('input', e => {
-                const q = e.target.value.trim();
-                if (q && Graph) {
-                    const node = currentData.nodes.find(n => n.id.includes(q));
-                    if (node) {
-                        Graph.cameraPosition(
-                            { x: node.x * 2, y: node.y * 2, z: node.z * 2 },
-                            { x: node.x, y: node.y, z: node.z },
-                            1500
-                        );
-                        // 高亮
-                        const origColor = node.color;
-                        Graph.nodeColor(n => n === node ? '#ffffff' : n.color);
-                        setTimeout(() => Graph.nodeColor(n => n.color), 2000);
+            // 搜索（移动端优化）
+            const searchInput = document.getElementById('search');
+            let searchTimeout;
+            
+            searchInput.addEventListener('input', e => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    const q = e.target.value.trim();
+                    if (q && Graph) {
+                        const node = currentData.nodes.find(n => n.id.includes(q));
+                        if (node) {
+                            Graph.cameraPosition(
+                                { x: node.x * 2, y: node.y * 2, z: node.z * 2 },
+                                { x: node.x, y: node.y, z: node.z },
+                                isMobile ? 1000 : 1500
+                            );
+                            // 高亮
+                            Graph.nodeColor(n => n === node ? '#ffffff' : n.color);
+                            setTimeout(() => Graph.nodeColor(n => n.color), 2000);
+                        }
                     }
-                }
+                }, 300); // 防抖
             });
+            
+            // 移动端搜索框优化
+            if (isMobile) {
+                searchInput.addEventListener('focus', () => {
+                    // 防止 iOS 缩放
+                    document.querySelector('meta[name="viewport"]').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+                });
+            }
 
             // 朝代切换
             document.querySelectorAll('.dynasty-btn').forEach(btn => {
