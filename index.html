@@ -168,9 +168,16 @@
     <!-- 触控提示（移动端） -->
     <div class="touch-hint" id="touch-hint">👆 双指缩放 / 单指旋转</div>
 
-    <!-- 智能加载依赖库（多CDN备份） -->
+    <!-- 依赖库 - 优先本地，CDN备用 -->
     <script>
-        // CDN 列表（按优先级排序）
+        // 本地文件路径
+        const LOCAL_LIBS = {
+            three: 'lib/three.min.js',
+            d3force: 'lib/d3-force-3d.min.js',
+            forcegraph: 'lib/3d-force-graph.min.js'
+        };
+        
+        // CDN 备用
         const CDN_SOURCES = [
             {
                 name: 'unpkg',
@@ -186,7 +193,7 @@
             }
         ];
         
-        let currentCDN = 0;
+        let currentSource = '本地';
         const debugEl = document.getElementById('debug');
         
         // 加载脚本
@@ -198,13 +205,32 @@
                 script.onerror = () => reject(new Error(`Failed to load ${url}`));
                 document.head.appendChild(script);
                 
-                // 超时检测
                 setTimeout(() => reject(new Error(`Timeout loading ${url}`)), timeout);
             });
         }
         
         // 尝试加载所有依赖
         async function loadDependencies() {
+            // 先尝试本地文件
+            debugEl.textContent = '尝试加载本地文件...';
+            
+            try {
+                await Promise.all([
+                    loadScript(LOCAL_LIBS.three),
+                    loadScript(LOCAL_LIBS.d3force),
+                    loadScript(LOCAL_LIBS.forcegraph)
+                ]);
+                
+                debugEl.textContent += ' ✅';
+                currentSource = '本地';
+                console.log('✅ 使用本地文件');
+                return true;
+            } catch (err) {
+                console.warn('❌ 本地文件加载失败:', err.message);
+                debugEl.textContent += ' ❌';
+            }
+            
+            // 本地失败，尝试 CDN
             for (let i = 0; i < CDN_SOURCES.length; i++) {
                 const cdn = CDN_SOURCES[i];
                 debugEl.textContent = `尝试 CDN ${i + 1}/${CDN_SOURCES.length}: ${cdn.name}...`;
@@ -217,16 +243,12 @@
                     ]);
                     
                     debugEl.textContent += ' ✅';
-                    currentCDN = i;
+                    currentSource = cdn.name;
                     console.log(`✅ 使用 CDN: ${cdn.name}`);
                     return true;
                 } catch (err) {
                     console.warn(`❌ CDN ${cdn.name} 失败:`, err.message);
                     debugEl.textContent += ' ❌';
-                    
-                    // 清理失败的脚本
-                    document.querySelectorAll('script[src*="unpkg"], script[src*="cdnjs"], script[src*="jsdelivr"]')
-                        .forEach(s => s.remove());
                 }
             }
             
@@ -401,7 +423,7 @@
                 return;
             }
             
-            debug.textContent = `Three: ✅ | d3: ✅ | FG: ✅ | CDN: ${CDN_SOURCES[currentCDN].name}`;
+            debug.textContent = `Three: ✅ | d3: ✅ | FG: ✅ | 来源: ${currentSource}`;
 
             initGraph();
             updateLegend(currentData);
