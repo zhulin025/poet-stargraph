@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宋代诗人关系星云 · 诗云星图</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #000011;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 顶部导航栏 */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(180deg, rgba(0,0,30,0.9) 0%, rgba(0,0,30,0.7) 100%);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+            border-bottom: 1px solid rgba(100, 150, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* 搜索框 */
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            width: 200px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            border-radius: 20px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #60a5fa;
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.3);
+        }
+
+        .search-box input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* 朝代切换按钮 */
+        .dynasty-toggle {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .dynasty-btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 16px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .dynasty-btn.active {
+            background: linear-gradient(90deg, #60a5fa, #3b82f6);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(96, 165, 250, 0.4);
+        }
+
+        .dynasty-btn:hover:not(.active) {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* 底部控制面板 */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 100;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 90%;
+        }
+
+        .control-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            border-radius: 25px;
+            color: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn:hover {
+            background: rgba(96, 165, 250, 0.3);
+            border-color: #60a5fa;
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.3);
+        }
+
+        .control-btn.active {
+            background: linear-gradient(90deg, #60a5fa, #3b82f6);
+            border-color: #60a5fa;
+        }
+
+        /* 图例面板 */
+        .legend {
+            position: fixed;
+            bottom: 100px;
+            left: 20px;
+            background: rgba(0, 0, 30, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(100, 150, 255, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            z-index: 100;
+            max-height: 300px;
+            overflow-y: auto;
+            min-width: 200px;
+        }
+
+        .legend h3 {
+            font-size: 14px;
+            margin-bottom: 12px;
+            color: #60a5fa;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 13px;
+        }
+
+        .legend-item:last-child {
+            border-bottom: none;
+        }
+
+        .legend-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .legend-count {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+        }
+
+        /* 3D 图容器 */
+        #graph-container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* 加载动画 */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000011;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s;
+        }
+
+        .loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(96, 165, 250, 0.2);
+            border-top-color: #60a5fa;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            color: #60a5fa;
+            font-size: 14px;
+        }
+
+        /* 信息提示框 */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 30, 0.95);
+            border: 1px solid rgba(100, 150, 255, 0.4);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 300px;
+            box-shadow: 0 0 30px rgba(96, 165, 250, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .tooltip h4 {
+            color: #60a5fa;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .tooltip p {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载动画 -->
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在构建诗人关系星云...</div>
+    </div>
+
+    <!-- 顶部导航 -->
+    <header class="header">
+        <h1>📜 宋代诗人关系星云</h1>
+        <div class="header-controls">
+            <div class="search-box">
+                <input type="text" id="search" placeholder="搜索诗人...">
+            </div>
+            <div class="dynasty-toggle">
+                <button class="dynasty-btn active" data-dynasty="song">宋</button>
+                <button class="dynasty-btn" data-dynasty="tang">唐</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 3D 图容器 -->
+    <div id="graph-container"></div>
+
+    <!-- 底部控制 -->
+    <div class="controls">
+        <button class="control-btn" id="btn-rotate">🔄 停止旋转</button>
+        <button class="control-btn" id="btn-flip">🔃 Y 轴翻转</button>
+        <button class="control-btn" id="btn-layout">📐 横向布局</button>
+        <button class="control-btn" id="btn-bloom">✨ 光晕效果</button>
+        <button class="control-btn" id="btn-particles">💫 粒子连线</button>
+    </div>
+
+    <!-- 图例 -->
+    <div class="legend" id="legend">
+        <h3>📊 核心诗人</h3>
+        <div id="legend-content"></div>
+    </div>
+
+    <!-- 信息提示框 -->
+    <div class="tooltip" id="tooltip" style="display: none;"></div>
+
+    <!-- 引入 3D-Force-Graph -->
+    <script src="https://cdn.jsdelivr.net/npm/3d-force-graph@1.73.2/dist/3d-force-graph.min.js"></script>
+
+    <script>
+        // ==================== 数据准备 ====================
+        // 宋代诗人数据（模拟真实关系）
+        const poetsData = {
+            nodes: [
+                { id: '苏轼', group: 1, val: 316, color: '#fbbf24' },
+                { id: '王安石', group: 2, val: 58, color: '#60a5fa' },
+                { id: '陆游', group: 3, val: 55, color: '#a78bfa' },
+                { id: '朱熹', group: 4, val: 47, color: '#34d399' },
+                { id: '杨万里', group: 3, val: 42, color: '#a78bfa' },
+                { id: '辛弃疾', group: 2, val: 38, color: '#60a5fa' },
+                { id: '黄庭坚', group: 1, val: 35, color: '#fbbf24' },
+                { id: '欧阳修', group: 1, val: 32, color: '#fbbf24' },
+                { id: '范成大', group: 3, val: 28, color: '#a78bfa' },
+                { id: '苏轼门生', group: 1, val: 25, color: '#fbbf24' },
+                { id: '曾巩', group: 1, val: 22, color: '#fbbf24' },
+                { id: '苏辙', group: 1, val: 20, color: '#fbbf24' },
+                { id: '秦观', group: 1, val: 18, color: '#fbbf24' },
+                { id: '米芾', group: 5, val: 16, color: '#f472b6' },
+                { id: '文同', group: 1, val: 15, color: '#fbbf24' },
+                { id: '陈师道', group: 1, val: 14, color: '#fbbf24' },
+                { id: '张耒', group: 1, val: 13, color: '#fbbf24' },
+                { id: '晁补之', group: 1, val: 12, color: '#fbbf24' },
+                { id: '周邦彦', group: 6, val: 11, color: '#fb923c' },
+                { id: '李清照', group: 6, val: 10, color: '#fb923c' },
+                { id: '岳飞', group: 7, val: 9, color: '#ef4444' },
+                { id: '文天祥', group: 7, val: 8, color: '#ef4444' },
+                { id: '姜夔', group: 6, val: 7, color: '#fb923c' },
+                { id: '刘过', group: 2, val: 6, color: '#60a5fa' },
+                { id: '陈亮', group: 2, val: 5, color: '#60a5fa' }
+            ],
+            links: [
+                // 苏轼关系网（核心）
+                { source: '苏轼', target: '王安石', value: 8 },
+                { source: '苏轼', target: '黄庭坚', value: 10 },
+                { source: '苏轼', target: '欧阳修', value: 9 },
+                { source: '苏轼', target: '苏辙', value: 10 },
+                { source: '苏轼', target: '秦观', value: 8 },
+                { source: '苏轼', target: '米芾', value: 6 },
+                { source: '苏轼', target: '文同', value: 7 },
+                { source: '苏轼', target: '陈师道', value: 5 },
+                { source: '苏轼', target: '张耒', value: 5 },
+                { source: '苏轼', target: '晁补之', value: 5 },
+                { source: '苏轼', target: '范成大', value: 4 },
+                { source: '苏轼', target: '杨万里', value: 4 },
+                { source: '苏轼', target: '陆游', value: 3 },
+                { source: '苏轼', target: '辛弃疾', value: 3 },
+                { source: '苏轼', target: '朱熹', value: 2 },
+                
+                // 王安石关系网
+                { source: '王安石', target: '欧阳修', value: 6 },
+                { source: '王安石', target: '曾巩', value: 7 },
+                { source: '王安石', target: '苏轼门生', value: 4 },
+                
+                // 陆游关系网
+                { source: '陆游', target: '杨万里', value: 8 },
+                { source: '陆游', target: '范成大', value: 7 },
+                { source: '陆游', target: '辛弃疾', value: 6 },
+                { source: '陆游', target: '朱熹', value: 5 },
+                
+                // 江西诗派
+                { source: '黄庭坚', target: '陈师道', value: 7 },
+                { source: '黄庭坚', target: '秦观', value: 5 },
+                
+                // 婉约派
+                { source: '周邦彦', target: '李清照', value: 6 },
+                { source: '李清照', target: '姜夔', value: 5 },
+                
+                // 爱国诗人
+                { source: '辛弃疾', target: '岳飞', value: 4 },
+                { source: '陆游', target: '文天祥', value: 3 },
+                { source: '陈亮', target: '刘过', value: 4 },
+                
+                // 其他关系
+                { source: '欧阳修', target: '曾巩', value: 6 },
+                { source: '欧阳修', target: '苏轼门生', value: 5 },
+                { source: '朱熹', target: '杨万里', value: 4 },
+                { source: '米芾', target: '文同', value: 3 }
+            ]
+        };
+
+        // 唐代诗人数据（用于切换）
+        const tangPoetsData = {
+            nodes: [
+                { id: '李白', group: 1, val: 280, color: '#fbbf24' },
+                { id: '杜甫', group: 2, val: 260, color: '#60a5fa' },
+                { id: '白居易', group: 3, val: 180, color: '#a78bfa' },
+                { id: '王维', group: 4, val: 150, color: '#34d399' },
+                { id: '李商隐', group: 5, val: 120, color: '#f472b6' },
+                { id: '杜牧', group: 5, val: 100, color: '#f472b6' },
+                { id: '韩愈', group: 6, val: 90, color: '#fb923c' },
+                { id: '柳宗元', group: 6, val: 85, color: '#fb923c' },
+                { id: '孟浩然', group: 4, val: 80, color: '#34d399' },
+                { id: '王昌龄', group: 7, val: 70, color: '#ef4444' }
+            ],
+            links: [
+                { source: '李白', target: '杜甫', value: 10 },
+                { source: '李白', target: '孟浩然', value: 8 },
+                { source: '李白', target: '王昌龄', value: 6 },
+                { source: '杜甫', target: '白居易', value: 7 },
+                { source: '杜甫', target: '韩愈', value: 5 },
+                { source: '白居易', target: '李商隐', value: 6 },
+                { source: '王维', target: '孟浩然', value: 8 },
+                { source: '李商隐', target: '杜牧', value: 7 },
+                { source: '韩愈', target: '柳宗元', value: 9 }
+            ]
+        };
+
+        // ==================== 初始化图表 ====================
+        let Graph;
+        let currentData = poetsData;
+        let isRotating = true;
+        let isBloomEnabled = true;
+        let isParticlesEnabled = true;
+
+        function initGraph() {
+            Graph = ForceGraph3D()
+                .document(document.getElementById('graph-container'))
+                .graphData(currentData)
+                .nodeLabel('id')
+                .nodeAutoColorBy('group')
+                .nodeResolution(16)
+                .nodeThreeObjectExtend(true)
+                .nodeThreeObject((node) => {
+                    // 创建发光球体
+                    const geometry = new THREE.SphereGeometry(node.val / 15, 16, 16);
+                    const material = new THREE.MeshPhongMaterial({
+                        color: node.color,
+                        emissive: node.color,
+                        emissiveIntensity: 0.5,
+                        transparent: true,
+                        opacity: 0.9
+                    });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    
+                    // 添加光晕效果
+                    const glowGeometry = new THREE.SphereGeometry(node.val / 12, 16, 16);
+                    const glowMaterial = new THREE.MeshBasicMaterial({
+                        color: node.color,
+                        transparent: true,
+                        opacity: 0.3,
+                        side: THREE.BackSide
+                    });
+                    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                    mesh.add(glow);
+                    
+                    return mesh;
+                })
+                .linkWidth(link => Math.sqrt(link.value) * 0.8)
+                .linkColor(link => {
+                    const sourceColor = link.source.color;
+                    const targetColor = link.target.color;
+                    return `linear-gradient(${sourceColor}, ${targetColor})`;
+                })
+                .linkOpacity(0.6)
+                .linkDirectionalParticles(2)
+                .linkDirectionalParticleSpeed(0.005)
+                .linkDirectionalParticleColor(() => '#60a5fa')
+                .linkDirectionalParticleWidth(2)
+                .d3Force('charge', d3.forceManyBody().strength(-150))
+                .d3Force('link', d3.forceLink().distance(100))
+                .backgroundColor('#000011')
+                .showNavInfo(false)
+                .onNodeHover(node => {
+                    document.getElementById('graph-container').style.cursor = node ? 'pointer' : 'default';
+                    showTooltip(node);
+                })
+                .onNodeClick(node => {
+                    // 聚焦到点击的节点
+                    Graph.cameraPosition(
+                        { x: node.x * 1.5, y: node.y * 1.5, z: node.z * 1.5 },
+                        { x: node.x, y: node.y, z: node.z },
+                        2000
+                    );
+                });
+
+            // 自动旋转
+            Graph.controls().autoRotate = true;
+            Graph.controls().autoRotateSpeed = 0.5;
+            Graph.controls().enableDamping = true;
+            Graph.controls().dampingFactor = 0.05;
+
+            // 隐藏加载动画
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+            }, 1500);
+        }
+
+        // ==================== 工具函数 ====================
+        function showTooltip(node) {
+            const tooltip = document.getElementById('tooltip');
+            if (node) {
+                tooltip.style.display = 'block';
+                tooltip.innerHTML = `
+                    <h4>${node.id}</h4>
+                    <p>影响力指数：${node.val}</p>
+                    <p>点击可聚焦查看</p>
+                `;
+                
+                // 跟随鼠标
+                document.addEventListener('mousemove', moveTooltip);
+            } else {
+                tooltip.style.display = 'none';
+                document.removeEventListener('mousemove', moveTooltip);
+            }
+        }
+
+        function moveTooltip(e) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.left = (e.clientX + 15) + 'px';
+            tooltip.style.top = (e.clientY + 15) + 'px';
+        }
+
+        function updateLegend(data) {
+            const legendContent = document.getElementById('legend-content');
+            const topPoets = data.nodes
+                .sort((a, b) => b.val - a.val)
+                .slice(0, 10);
+            
+            legendContent.innerHTML = topPoets.map(poet => `
+                <div class="legend-item">
+                    <div class="legend-name">
+                        <div class="legend-dot" style="background-color: ${poet.color}; color: ${poet.color}"></div>
+                        <span>${poet.id}</span>
+                    </div>
+                    <div class="legend-count">${poet.val}</div>
+                </div>
+            `).join('');
+        }
+
+        // ==================== 事件绑定 ====================
+        function bindEvents() {
+            // 搜索功能
+            document.getElementById('search').addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+                if (query) {
+                    const node = currentData.nodes.find(n => n.id.includes(query));
+                    if (node) {
+                        Graph.cameraPosition(
+                            { x: node.x * 2, y: node.y * 2, z: node.z * 2 },
+                            { x: node.x, y: node.y, z: node.z },
+                            1500
+                        );
+                        // 高亮节点
+                        Graph.nodeColor(n => n === node ? '#fff' : n.color);
+                        setTimeout(() => {
+                            Graph.nodeColor(n => n.color);
+                        }, 2000);
+                    }
+                }
+            });
+
+            // 朝代切换
+            document.querySelectorAll('.dynasty-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.dynasty-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    const dynasty = btn.dataset.dynasty;
+                    currentData = dynasty === 'song' ? poetsData : tangPoetsData;
+                    Graph.graphData(currentData);
+                    updateLegend(currentData);
+                });
+            });
+
+            // 旋转控制
+            document.getElementById('btn-rotate').addEventListener('click', (e) => {
+                isRotating = !isRotating;
+                Graph.controls().autoRotate = isRotating;
+                e.target.textContent = isRotating ? '🔄 停止旋转' : '▶️ 开始旋转';
+                e.target.classList.toggle('active', !isRotating);
+            });
+
+            // Y 轴翻转
+            document.getElementById('btn-flip').addEventListener('click', (e) => {
+                const camPos = Graph.cameraPosition();
+                Graph.cameraPosition(
+                    { x: camPos.x, y: -camPos.y, z: camPos.z },
+                    { x: 0, y: 0, z: 0 },
+                    1000
+                );
+                e.target.classList.toggle('active');
+            });
+
+            // 横向布局
+            document.getElementById('btn-layout').addEventListener('click', (e) => {
+                Graph.d3Force('charge').strength(isRotating ? -150 : -300);
+                Graph.d3Force('link').distance(isRotating ? 100 : 150);
+                Graph.engineRestart();
+                e.target.classList.toggle('active');
+            });
+
+            // 光晕效果
+            document.getElementById('btn-bloom').addEventListener('click', (e) => {
+                isBloomEnabled = !isBloomEnabled;
+                Graph.nodeThreeObjectExtend(isBloomEnabled);
+                e.target.classList.toggle('active', !isBloomEnabled);
+            });
+
+            // 粒子连线
+            document.getElementById('btn-particles').addEventListener('click', (e) => {
+                isParticlesEnabled = !isParticlesEnabled;
+                Graph.linkDirectionalParticles(isParticlesEnabled ? 2 : 0);
+                e.target.classList.toggle('active', !isParticlesEnabled);
+            });
+        }
+
+        // ==================== 启动 ====================
+        initGraph();
+        bindEvents();
+        updateLegend(poetsData);
+    </script>
+</body>
+</html>
