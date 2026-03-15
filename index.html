@@ -7,95 +7,65 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000011; color: #fff; overflow: hidden; height: 100vh; font-family: sans-serif; }
-        .header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: rgba(0,0,30,0.9); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 100; border-bottom: 1px solid rgba(100,150,255,0.2); }
+        .header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: rgba(0,0,30,0.9); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 100; }
         .header h1 { font-size: 20px; background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .header-controls { display: flex; gap: 12px; align-items: center; }
-        .search-box input { padding: 8px 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(100,150,255,0.3); border-radius: 20px; color: #fff; font-size: 14px; outline: none; }
-        .dynasty-toggle { display: flex; background: rgba(255,255,255,0.1); border-radius: 20px; padding: 4px; }
-        .dynasty-btn { padding: 6px 16px; border: none; border-radius: 16px; background: transparent; color: rgba(255,255,255,0.6); cursor: pointer; }
-        .dynasty-btn.active { background: linear-gradient(90deg, #60a5fa, #3b82f6); color: #fff; }
-        .controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 100; flex-wrap: wrap; justify-content: center; }
-        .control-btn { padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(100,150,255,0.3); border-radius: 25px; color: #fff; cursor: pointer; font-size: 13px; }
-        .control-btn.active { background: linear-gradient(90deg, #60a5fa, #3b82f6); }
+        .controls-bar { display: flex; gap: 12px; align-items: center; }
+        .search-box input { padding: 8px 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(100,150,255,0.3); border-radius: 20px; color: #fff; font-size: 14px; }
+        .dynasty-btn { padding: 6px 16px; background: rgba(255,255,255,0.1); border: none; border-radius: 16px; color: #fff; cursor: pointer; }
+        .dynasty-btn.active { background: #60a5fa; }
+        .controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 100; flex-wrap: wrap; }
+        .control-btn { padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(100,150,255,0.3); border-radius: 25px; color: #fff; cursor: pointer; }
+        .control-btn.active { background: #60a5fa; }
         .legend { position: fixed; bottom: 100px; left: 20px; background: rgba(0,0,30,0.85); border: 1px solid rgba(100,150,255,0.2); border-radius: 12px; padding: 16px; z-index: 100; max-height: 300px; overflow-y: auto; }
         .legend h3 { font-size: 14px; margin-bottom: 12px; color: #60a5fa; }
         .legend-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 13px; }
-        .legend-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
-        #graph-container { width: 100vw; height: 100vh; }
-        .loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000011; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
-        .loading.hidden { opacity: 0; pointer-events: none; }
-        .loading-spinner { width: 60px; height: 60px; border: 3px solid rgba(96,165,250,0.2); border-top-color: #60a5fa; border-radius: 50%; animation: spin 1s linear infinite; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; background: #fff; }
+        #graph { width: 100vw; height: 100vh; }
+        .loading { position: fixed; inset: 0; background: #000011; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
+        .loading.hidden { display: none; }
+        .spinner { width: 60px; height: 60px; border: 3px solid rgba(96,165,250,0.2); border-top-color: #60a5fa; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-text { margin-top: 20px; color: #60a5fa; font-size: 14px; }
-        .debug-info { margin-top: 10px; color: rgba(255,255,255,0.5); font-size: 12px; text-align: center; }
+        .loading-text { margin-top: 20px; color: #60a5fa; }
+        .debug { margin-top: 10px; color: rgba(255,255,255,0.5); font-size: 12px; }
     </style>
 </head>
 <body>
     <div class="loading" id="loading">
-        <div class="loading-spinner"></div>
+        <div class="spinner"></div>
         <div class="loading-text">正在加载 3D 引擎...</div>
-        <div class="debug-info" id="debug-info">初始化中...</div>
+        <div class="debug" id="debug">初始化中...</div>
     </div>
 
     <header class="header">
         <h1>📜 宋代诗人关系星云</h1>
-        <div class="header-controls">
+        <div class="controls-bar">
             <div class="search-box"><input type="text" id="search" placeholder="搜索诗人..."></div>
-            <div class="dynasty-toggle">
+            <div>
                 <button class="dynasty-btn active" data-dynasty="song">宋</button>
                 <button class="dynasty-btn" data-dynasty="tang">唐</button>
             </div>
         </div>
     </header>
 
-    <div id="graph-container"></div>
+    <div id="graph"></div>
 
     <div class="controls">
         <button class="control-btn" id="btn-rotate">🔄 停止旋转</button>
-        <button class="control-btn" id="btn-flip">🔃 Y 轴翻转</button>
-        <button class="control-btn" id="btn-layout">📐 横向布局</button>
-        <button class="control-btn" id="btn-bloom">✨ 光晕效果</button>
-        <button class="control-btn" id="btn-particles">💫 粒子连线</button>
+        <button class="control-btn" id="btn-flip">🔃 翻转</button>
+        <button class="control-btn" id="btn-bloom">✨ 光晕</button>
+        <button class="control-btn" id="btn-particles">💫 粒子</button>
     </div>
 
-    <div class="legend" id="legend">
+    <div class="legend">
         <h3>📊 核心诗人</h3>
         <div id="legend-content"></div>
     </div>
 
-    <!-- 依赖库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/d3-force-3d@3.0.3/dist/d3-force-3d.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/3d-force-graph@1.73.2/dist/3d-force-graph.min.js"></script>
 
     <script>
-        // 加载状态检测
-        const loadStatus = { three: false, d3: false, fg: false };
-        window.addEventListener('load', () => {
-            loadStatus.three = typeof THREE !== 'undefined';
-            loadStatus.d3 = typeof d3 !== 'undefined';
-            loadStatus.fg = typeof ForceGraph3D !== 'undefined';
-            updateDebugInfo();
-            
-            if (loadStatus.three && loadStatus.d3 && loadStatus.fg) {
-                setTimeout(initGraph, 500);
-            } else {
-                document.getElementById('loading').innerHTML = `
-                    <div style="text-align:center;padding:40px;color:#fff;">
-                        <h2>❌ 库加载失败</h2>
-                        <p style="margin:20px 0;">Three.js: ${loadStatus.three?'✅':'❌'} | d3-force-3d: ${loadStatus.d3?'✅':'❌'} | 3D-Force-Graph: ${loadStatus.fg?'✅':'❌'}</p>
-                        <p style="font-size:12px;color:rgba(255,255,255,0.5);">请检查网络连接或更换浏览器</p>
-                        <button onclick="location.reload()" style="margin-top:20px;padding:10px 20px;background:#60a5fa;border:none;border-radius:6px;color:#fff;cursor:pointer;">🔄 重试</button>
-                    </div>
-                `;
-            }
-        });
-
-        function updateDebugInfo() {
-            document.getElementById('debug-info').textContent = 
-                `Three: ${loadStatus.three?'✅':'❌'} | d3: ${loadStatus.d3?'✅':'❌'} | FG: ${loadStatus.fg?'✅':'❌'}`;
-        }
-
         const poetsData = {
             nodes: [
                 { id: '苏轼', group: 1, val: 316, color: '#fbbf24' },
@@ -132,67 +102,67 @@
             ]
         };
 
-        const tangPoetsData = {
+        const tangData = {
             nodes: [
                 { id: '李白', group: 1, val: 280, color: '#fbbf24' },
                 { id: '杜甫', group: 2, val: 260, color: '#60a5fa' },
                 { id: '白居易', group: 3, val: 180, color: '#a78bfa' },
                 { id: '王维', group: 4, val: 150, color: '#34d399' },
                 { id: '李商隐', group: 5, val: 120, color: '#f472b6' },
-                { id: '杜牧', group: 5, val: 100, color: '#f472b6' },
-                { id: '韩愈', group: 6, val: 90, color: '#fb923c' },
-                { id: '柳宗元', group: 6, val: 85, color: '#fb923c' }
+                { id: '杜牧', group: 5, val: 100, color: '#f472b6' }
             ],
             links: [
                 { source: '李白', target: '杜甫', value: 10 },
                 { source: '李白', target: '王维', value: 8 },
                 { source: '杜甫', target: '白居易', value: 7 },
                 { source: '白居易', target: '李商隐', value: 6 },
-                { source: '王维', target: '柳宗元', value: 5 },
-                { source: '李商隐', target: '杜牧', value: 7 },
-                { source: '韩愈', target: '柳宗元', value: 9 }
+                { source: '李商隐', target: '杜牧', value: 7 }
             ]
         };
 
         let Graph, currentData = poetsData;
-        let isRotating = true, isBloomEnabled = true, isParticlesEnabled = true;
+        let isRotating = true, isBloom = true, isParticles = true;
 
-        function initGraph() {
-            console.log('初始化图表...');
+        window.addEventListener('load', () => {
+            document.getElementById('debug').textContent = `Three: ${typeof THREE !== 'undefined' ? '✅' : '❌'} | d3: ${typeof d3 !== 'undefined' ? '✅' : '❌'} | FG: ${typeof ForceGraph3D !== 'undefined' ? '✅' : '❌'}`;
+            
+            if (typeof ForceGraph3D === 'undefined') {
+                document.getElementById('loading').innerHTML = '<h2 style="color:#ef4444">❌ 3D-Force-Graph 加载失败</h2><p>请检查网络</p><button onclick="location.reload()" style="margin-top:20px;padding:10px 20px;background:#60a5fa;border:none;border-radius:6px;color:#fff;">🔄 重试</button>';
+                return;
+            }
+
             try {
-                Graph = ForceGraph3D()
-                    .document(document.getElementById('graph-container'))
+                Graph = ForceGraph3D()(document.getElementById('graph'))
                     .graphData(currentData)
                     .nodeLabel('id')
                     .nodeAutoColorBy('group')
                     .nodeResolution(16)
                     .nodeThreeObjectExtend(true)
                     .nodeThreeObject(node => {
-                        const geometry = new THREE.SphereGeometry(node.val / 15, 16, 16);
-                        const material = new THREE.MeshPhongMaterial({
+                        const geo = new THREE.SphereGeometry(node.val / 15, 16, 16);
+                        const mat = new THREE.MeshPhongMaterial({
                             color: node.color,
                             emissive: node.color,
                             emissiveIntensity: 0.5,
                             transparent: true,
                             opacity: 0.9
                         });
-                        const mesh = new THREE.Mesh(geometry, material);
-                        
-                        if (isBloomEnabled) {
-                            const glowGeometry = new THREE.SphereGeometry(node.val / 12, 8, 8);
-                            const glowMaterial = new THREE.MeshBasicMaterial({
+                        const mesh = new THREE.Mesh(geo, mat);
+                        if (isBloom) {
+                            const glowGeo = new THREE.SphereGeometry(node.val / 12, 8, 8);
+                            const glowMat = new THREE.MeshBasicMaterial({
                                 color: node.color,
                                 transparent: true,
                                 opacity: 0.3,
                                 side: THREE.BackSide
                             });
-                            mesh.add(new THREE.Mesh(glowGeometry, glowMaterial));
+                            mesh.add(new THREE.Mesh(glowGeo, glowMat));
                         }
                         return mesh;
                     })
                     .linkWidth(link => Math.sqrt(link.value) * 0.8)
                     .linkOpacity(0.6)
-                    .linkDirectionalParticles(isParticlesEnabled ? 2 : 0)
+                    .linkDirectionalParticles(isParticles ? 2 : 0)
                     .linkDirectionalParticleSpeed(0.005)
                     .linkDirectionalParticleColor(() => '#60a5fa')
                     .linkDirectionalParticleWidth(2)
@@ -200,122 +170,88 @@
                     .d3Force('link', d3.forceLink().distance(100))
                     .backgroundColor('#000011')
                     .showNavInfo(false)
-                    .onNodeHover(node => {
-                        document.getElementById('graph-container').style.cursor = node ? 'pointer' : 'default';
-                    })
+                    .onNodeHover(node => { document.getElementById('graph').style.cursor = node ? 'pointer' : 'default'; })
                     .onNodeClick(node => {
-                        Graph.cameraPosition(
-                            { x: node.x * 1.5, y: node.y * 1.5, z: node.z * 1.5 },
-                            { x: node.x, y: node.y, z: node.z },
-                            2000
-                        );
+                        Graph.cameraPosition({ x: node.x*1.5, y: node.y*1.5, z: node.z*1.5 }, { x: node.x, y: node.y, z: node.z }, 2000);
                     })
                     .onEngineStop(() => {
-                        console.log('引擎停止，渲染完成');
-                        document.getElementById('loading').classList.add('hidden');
-                    })
-                    .onError(err => {
-                        console.error('渲染错误:', err);
-                        document.getElementById('loading').innerHTML = `
-                            <div style="text-align:center;padding:40px;color:#fff;">
-                                <h2>❌ 渲染失败</h2>
-                                <p style="margin:20px 0;">${err.message || '未知错误'}</p>
-                                <button onclick="location.reload()" style="padding:10px 20px;background:#60a5fa;border:none;border-radius:6px;color:#fff;cursor:pointer;">🔄 重试</button>
-                            </div>
-                        `;
+                        console.log('✅ 引擎停止，隐藏加载动画');
+                        const loading = document.getElementById('loading');
+                        if (loading) loading.classList.add('hidden');
                     });
+
+                // 备用方案：5 秒后强制隐藏
+                setTimeout(() => {
+                    const loading = document.getElementById('loading');
+                    if (loading && !loading.classList.contains('hidden')) {
+                        console.log('⏰ 超时强制隐藏加载动画');
+                        loading.classList.add('hidden');
+                    }
+                }, 5000);
 
                 Graph.controls().autoRotate = isRotating;
                 Graph.controls().autoRotateSpeed = 0.5;
                 Graph.controls().enableDamping = true;
                 Graph.controls().dampingFactor = 0.05;
 
-                console.log('图表初始化完成');
+                document.getElementById('debug').textContent += ' | 图表：✅';
             } catch (err) {
-                console.error('初始化异常:', err);
-                document.getElementById('loading').innerHTML = `
-                    <div style="text-align:center;padding:40px;color:#fff;">
-                        <h2>❌ 初始化失败</h2>
-                        <p style="margin:20px 0;">${err.message}</p>
-                        <button onclick="location.reload()" style="padding:10px 20px;background:#60a5fa;border:none;border-radius:6px;color:#fff;cursor:pointer;">🔄 重试</button>
-                    </div>
-                `;
+                console.error('❌ 错误:', err);
+                document.getElementById('loading').innerHTML = `<h2 style="color:#ef4444">❌ 初始化失败</h2><p>${err.message}</p><button onclick="location.reload()" style="margin-top:20px;padding:10px 20px;background:#60a5fa;border:none;border-radius:6px;color:#fff;">🔄 重试</button>`;
             }
-        }
+        });
 
         function updateLegend(data) {
             const top = data.nodes.sort((a, b) => b.val - a.val).slice(0, 10);
             document.getElementById('legend-content').innerHTML = top.map(p => `
                 <div class="legend-item">
-                    <div style="display:flex;align-items:center;">
-                        <div class="legend-dot" style="background:${p.color}"></div>
-                        <span>${p.id}</span>
-                    </div>
+                    <div style="display:flex;align-items:center;"><div class="legend-dot" style="background:${p.color}"></div><span>${p.id}</span></div>
                     <div style="color:rgba(255,255,255,0.6);">${p.val}</div>
                 </div>
             `).join('');
         }
 
-        function bindEvents() {
-            document.getElementById('search').addEventListener('input', e => {
-                const q = e.target.value.trim();
-                if (q) {
-                    const node = currentData.nodes.find(n => n.id.includes(q));
-                    if (node) {
-                        Graph.cameraPosition(
-                            { x: node.x * 2, y: node.y * 2, z: node.z * 2 },
-                            { x: node.x, y: node.y, z: node.z },
-                            1500
-                        );
-                    }
-                }
-            });
+        document.getElementById('search').addEventListener('input', e => {
+            const q = e.target.value.trim();
+            if (q) {
+                const node = currentData.nodes.find(n => n.id.includes(q));
+                if (node) Graph.cameraPosition({ x: node.x*2, y: node.y*2, z: node.z*2 }, { x: node.x, y: node.y, z: node.z }, 1500);
+            }
+        });
 
-            document.querySelectorAll('.dynasty-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.dynasty-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentData = btn.dataset.dynasty === 'song' ? poetsData : tangPoetsData;
-                    Graph.graphData(currentData);
-                    updateLegend(currentData);
-                });
+        document.querySelectorAll('.dynasty-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.dynasty-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentData = btn.dataset.dynasty === 'song' ? poetsData : tangData;
+                Graph.graphData(currentData);
+                updateLegend(currentData);
             });
+        });
 
-            document.getElementById('btn-rotate').addEventListener('click', e => {
-                isRotating = !isRotating;
-                Graph.controls().autoRotate = isRotating;
-                e.target.textContent = isRotating ? '🔄 停止旋转' : '▶️ 旋转';
-                e.target.classList.toggle('active', !isRotating);
-            });
+        document.getElementById('btn-rotate').addEventListener('click', e => {
+            isRotating = !isRotating;
+            Graph.controls().autoRotate = isRotating;
+            e.target.textContent = isRotating ? '🔄 停止旋转' : '▶️ 旋转';
+        });
 
-            document.getElementById('btn-flip').addEventListener('click', e => {
-                const cam = Graph.cameraPosition();
-                Graph.cameraPosition({ x: cam.x, y: -cam.y, z: cam.z }, { x: 0, y: 0, z: 0 }, 1000);
-                e.target.classList.toggle('active');
-            });
+        document.getElementById('btn-flip').addEventListener('click', e => {
+            const cam = Graph.cameraPosition();
+            Graph.cameraPosition({ x: cam.x, y: -cam.y, z: cam.z }, { x: 0, y: 0, z: 0 }, 1000);
+        });
 
-            document.getElementById('btn-layout').addEventListener('click', e => {
-                Graph.d3Force('charge').strength(isRotating ? -150 : -300);
-                Graph.d3Force('link').distance(isRotating ? 100 : 150);
-                Graph.engineRestart();
-                e.target.classList.toggle('active');
-            });
+        document.getElementById('btn-bloom').addEventListener('click', e => {
+            isBloom = !isBloom;
+            e.target.classList.toggle('active', !isBloom);
+        });
 
-            document.getElementById('btn-bloom').addEventListener('click', e => {
-                isBloomEnabled = !isBloomEnabled;
-                e.target.classList.toggle('active', !isBloomEnabled);
-            });
+        document.getElementById('btn-particles').addEventListener('click', e => {
+            isParticles = !isParticles;
+            Graph.linkDirectionalParticles(isParticles ? 2 : 0);
+            e.target.classList.toggle('active', !isParticles);
+        });
 
-            document.getElementById('btn-particles').addEventListener('click', e => {
-                isParticlesEnabled = !isParticlesEnabled;
-                Graph.linkDirectionalParticles(isParticlesEnabled ? 2 : 0);
-                e.target.classList.toggle('active', !isParticlesEnabled);
-            });
-        }
-
-        // 启动
         updateLegend(poetsData);
-        bindEvents();
     </script>
 </body>
 </html>

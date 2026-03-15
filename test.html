@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>测试 3D-Force-Graph</title>
+    <style>
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; }
+        #container { width: 100vw; height: 100vh; }
+        #status { position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 8px; z-index: 100; }
+    </style>
+</head>
+<body>
+    <div id="status">加载中...</div>
+    <div id="container"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-force-3d@3.0.3/dist/d3-force-3d.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/3d-force-graph@1.73.2/dist/3d-force-graph.min.js"></script>
+    
+    <script>
+        const status = document.getElementById('status');
+        
+        window.addEventListener('load', () => {
+            status.textContent = `Three: ${typeof THREE !== 'undefined' ? '✅' : '❌'} | d3: ${typeof d3 !== 'undefined' ? '✅' : '❌'} | FG: ${typeof ForceGraph3D !== 'undefined' ? '✅' : '❌'}`;
+            
+            if (typeof ForceGraph3D === 'undefined') {
+                status.textContent += '\n❌ 3D-Force-Graph 未加载！';
+                return;
+            }
+            
+            try {
+                const Graph = ForceGraph3D()(document.getElementById('container'))
+                    .graphData({
+                        nodes: [
+                            { id: '苏轼', val: 10, color: '#fbbf24' },
+                            { id: '王安石', val: 8, color: '#60a5fa' },
+                            { id: '陆游', val: 6, color: '#a78bfa' }
+                        ],
+                        links: [
+                            { source: '苏轼', target: '王安石', value: 5 },
+                            { source: '苏轼', target: '陆游', value: 3 }
+                        ]
+                    })
+                    .nodeLabel('id')
+                    .nodeAutoColorBy('group')
+                    .linkWidth(link => Math.sqrt(link.value) * 0.5)
+                    .linkOpacity(0.6)
+                    .linkDirectionalParticles(2)
+                    .linkDirectionalParticleSpeed(0.005)
+                    .backgroundColor('#000000')
+                    .onEngineStop(() => {
+                        status.textContent += '\n✅ 渲染成功！';
+                        console.log('渲染完成');
+                    });
+                
+                Graph.controls().autoRotate = true;
+                Graph.controls().autoRotateSpeed = 0.5;
+                
+                status.textContent += '\n✅ 图表已创建';
+            } catch (err) {
+                status.textContent += '\n❌ 错误：' + err.message;
+                console.error('错误:', err);
+            }
+        });
+    </script>
+</body>
+</html>
