@@ -147,6 +147,17 @@ const Stargraph: React.FC<StargraphProps> = ({
     }
   }, [searchQuery, data.nodes]);
 
+  // Handle view reset on triggerFlip
+  useEffect(() => {
+    if (fgRef.current && triggerFlip > 1) {
+      fgRef.current.cameraPosition(
+        { x: 0, y: 0, z: 800 }, // 初始 Z 轴深度
+        { x: 0, y: 0, z: 0 },   // 看向原点
+        1500                   // 1.5s 平滑回归
+      );
+    }
+  }, [triggerFlip]);
+
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0 }}>
       <ForceGraph3D
@@ -170,6 +181,7 @@ const Stargraph: React.FC<StargraphProps> = ({
           onNodeHover(node);
         }}
         showNavInfo={false}
+        controlType="orbit"
       />
     </div>
   );

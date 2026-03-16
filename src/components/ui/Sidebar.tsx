@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     <motion.div 
       initial={{ x: -100, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
-      className="hidden lg:flex flex-col gap-6 w-80 z-40 pointer-events-auto h-full"
+      className="flex flex-col gap-4 w-full lg:w-80 z-40 pointer-events-auto h-full"
     >
       {/* 搜索框 */}
       <div className="clay-panel !p-6">
