@@ -5,6 +5,7 @@
 ![项目截图](public/screenshot.png)
 
 ## ✨ 核心特性
+
 - **多巴胺视觉系统**：采用高饱和度色彩空间、4px 物理粘土投影与现代波普风 UI 界面。
 - **3D 物理引擎**：基于 `react-force-graph-3d` 实现的星系引力场，支持触控旋转、捏合缩放。
 - **精准导航**：点击诗人名片即可实现 3D 视角“像素级”对焦，一键重置全局视野。
@@ -12,6 +13,7 @@
 - **移动端特化**：深度优化小屏交互与视野占比，支持全屏控制台遮罩。
 
 ## 🛠 技术栈
+
 - **框架**: Next.js 14 (App Router)
 - **渲染**: Three.js / React Force Graph 3D
 - **样式**: Tailwind CSS (Dopamine Theme)
@@ -32,7 +34,9 @@ npm run dev -- -H 0.0.0.0
 ```
 
 ## 🌐 部署
+
 项目支持 GitHub Pages 自动部署。构建结果将输出为静态 HTML 站点。
 
 ---
+
 **ANTIGRAVITY 实验室 // 时空观测站**
