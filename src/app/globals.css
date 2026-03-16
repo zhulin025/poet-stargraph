@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dopa-bg text-clay-dark antialiased;
+    font-family: 'Outfit', sans-serif;
+  }
+}
+
+@layer components {
+  /* Dopamine Super Clay Card - Refined 4px */
+  .clay-card {
+    @apply bg-white rounded-[2rem] border-[4px] border-clay-dark transition-all duration-300;
+    box-shadow: 4px 4px 0px 0px theme('colors.clay-dark');
+  }
+
+  .clay-card:hover {
+    @apply -translate-y-1;
+    box-shadow: 6px 6px 0px 0px theme('colors.clay-dark');
+  }
+
+  .clay-panel {
+    @apply clay-card p-8;
+  }
+
+  .clay-input {
+    @apply bg-white border-[3px] border-clay-dark rounded-xl px-5 py-3 text-sm font-black
+           focus:outline-none focus:ring-4 focus:ring-dopa-blue/10 transition-all duration-300
+           placeholder:text-slate-400 text-clay-dark shadow-[3px_3px_0px_0px_theme('colors.clay-dark')];
+  }
+
+  .cartoon-button {
+    @apply relative px-8 py-4 rounded-xl font-black text-white bg-dopa-blue 
+           border-[3px] border-clay-dark shadow-[4px_4px_0px_0px_theme('colors.clay-dark')] 
+           active:shadow-none active:translate-x-[4px] active:translate-y-[4px] transition-all duration-100
+           hover:scale-105;
+  }
+
+  .mobile-menu-btn {
+    @apply w-12 h-12 rounded-xl bg-white border-[3px] border-clay-dark flex items-center justify-center 
+           shadow-[4px_4px_0px_0px_theme('colors.clay-dark')] active:shadow-none 
+           active:translate-x-1 active:translate-y-1 transition-all outline-none;
+  }
+}
+
+/* Animations */
+@keyframes intense-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-10px) scale(1.05); }
+}
+
+.animate-dopa-bounce {
+  animation: intense-bounce 2s ease-in-out infinite;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-slate-100;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-clay-dark rounded-full;
+}
