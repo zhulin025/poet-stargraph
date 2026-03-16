@@ -6,6 +6,7 @@ import Sidebar from '@/components/ui/Sidebar';
 import Legend from '@/components/ui/Legend';
 import { songData } from '@/data/song';
 import { tangData } from '@/data/tang';
+import { yuanData } from '@/data/yuan';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cpu, Binary, Sparkles, X } from 'lucide-react';
 
@@ -20,7 +21,7 @@ const Stargraph = dynamic(() => import('@/components/Stargraph'), {
 });
 
 export default function Home() {
-  const [dynasty, setDynasty] = useState<'song' | 'tang'>('song');
+  const [dynasty, setDynasty] = useState<'song' | 'tang' | 'yuan'>('song');
   const [searchQuery, setSearchQuery] = useState('');
   const [isRotating, setIsRotating] = useState(true);
   const [hoverNode, setHoverNode] = useState<any>(null);
@@ -36,7 +37,9 @@ export default function Home() {
   }, []);
 
   const currentData = useMemo(() => {
-    return dynasty === 'song' ? songData : tangData;
+    if (dynasty === 'song') return songData;
+    if (dynasty === 'tang') return tangData;
+    return yuanData;
   }, [dynasty]);
 
   const handleSearch = useCallback((q: string) => {
@@ -89,7 +92,7 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-2 text-dopa-pink">
                 <Binary size={16} />
-                <span>{dynasty === 'song' ? 'DS-大宋核心' : 'ST-盛唐核心'}</span>
+                <span>{dynasty === 'song' ? 'DS-大宋核心' : dynasty === 'tang' ? 'ST-盛唐核心' : 'DY-大元核心'}</span>
               </div>
             </div>
 

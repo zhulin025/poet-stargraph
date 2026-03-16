@@ -5,8 +5,8 @@ import { Search, RotateCw, Layers, Globe, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface SidebarProps {
-  currentDynasty: 'song' | 'tang';
-  onDynastyChange: (dynasty: 'song' | 'tang') => void;
+  currentDynasty: 'song' | 'tang' | 'yuan';
+  onDynastyChange: (dynasty: 'song' | 'tang' | 'yuan') => void;
   onSearch: (query: string) => void;
   isRotating: boolean;
   toggleRotate: () => void;
@@ -51,17 +51,17 @@ const Sidebar: React.FC<SidebarProps> = ({
           <span>时空通讯站</span>
         </div>
         <div className="flex p-1.5 bg-clay-dark rounded-2xl relative shadow-lg border-[3px] border-clay-dark">
-          {(['song', 'tang'] as const).map((d) => (
+          {(['song', 'tang', 'yuan'] as const).map((d) => (
             <button
               key={d}
               onClick={() => onDynastyChange(d)}
-              className={`flex-1 py-3 text-xs font-[900] rounded-xl transition-all duration-300 relative z-10 ${
+              className={`flex-1 py-3 text-[10px] font-[900] rounded-xl transition-all duration-300 relative z-10 ${
                 currentDynasty === d 
-                  ? 'bg-dopa-yellow text-clay-dark shadow-[2px_2px_0_#000]' 
-                  : 'text-white hover:text-dopa-yellow'
+                   ? 'bg-dopa-yellow text-clay-dark shadow-[2px_2px_0_#000]' 
+                   : 'text-white hover:text-dopa-yellow'
               }`}
             >
-              {d === 'song' ? '大宋星域' : '盛唐云海'}
+              {d === 'song' ? '大宋' : d === 'tang' ? '盛唐' : '大元'}
             </button>
           ))}
         </div>
