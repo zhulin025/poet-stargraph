@@ -18,7 +18,7 @@ const Legend: React.FC<LegendProps> = ({ nodes, onFocus }) => {
     <motion.div 
       initial={{ y: 30, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="fixed bottom-2 left-2 right-2 sm:bottom-4 sm:left-4 sm:right-4 z-40 lg:left-[22rem] lg:right-8 pointer-events-auto"
+      className="fixed bottom-2 left-2 right-2 sm:bottom-4 sm:left-4 sm:right-4 z-40 lg:left-[24rem] lg:right-8 pointer-events-auto"
     >
       <div className="clay-panel !p-2 sm:!p-3 bg-white/95 backdrop-blur-sm shadow-[3px_3px_0px_0px_#1E1B4B] w-full border-[2px] border-clay-dark flex flex-col gap-1 sm:gap-2 overflow-hidden max-h-[20vh] sm:max-h-none">
         {/* Header Block - Ultra Compressed */}
