@@ -44,4 +44,4 @@ npm run dev -- -H 0.0.0.0
 
 ---
 
-**ANTIGRAVITY 实验室 // 诗外星辰项目组**
+**LaoA's AI Lab // 诗外星辰项目**
