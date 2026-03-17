@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Sidebar from '@/components/ui/Sidebar';
 import Legend from '@/components/ui/Legend';
@@ -10,7 +10,7 @@ import { yuanData } from '@/data/yuan';
 import { mingData } from '@/data/ming';
 import { qingData } from '@/data/qing';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cpu, Binary, Sparkles, X, Star } from 'lucide-react';
+import { Cpu, Binary, Sparkles, X, Star, Minimize, Camera } from 'lucide-react';
 
 const Stargraph = dynamic(() => import('@/components/Stargraph'), { 
   ssr: false,
@@ -29,8 +29,11 @@ export default function Home() {
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [selectedWork, setSelectedWork] = useState<any | null>(null);
   const [flipTrigger, setFlipTrigger] = useState(1);
+  const [exportTrigger, setExportTrigger] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(true);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const poemCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const checkScreen = () => setIsLargeScreen(window.innerWidth >= 1024);
@@ -126,6 +129,107 @@ export default function Home() {
     setFlipTrigger(prev => prev + 1);
   }, []);
 
+  const handleExportPoemCard = useCallback(() => {
+    if (!selectedWork || !selectedNode) return;
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Dimensions for the export image (Portrait style)
+    const cardWidth = 800;
+    const cardHeight = 1100;
+    canvas.width = cardWidth;
+    canvas.height = cardHeight;
+
+    // 1. Background
+    ctx.fillStyle = '#fdfcf8';
+    ctx.fillRect(0, 0, cardWidth, cardHeight);
+    
+    // Pattern dots (subtle)
+    ctx.fillStyle = 'rgba(30, 27, 75, 0.03)';
+    for(let x = 0; x < cardWidth; x += 30) {
+      for(let y = 0; y < cardHeight; y += 30) {
+        ctx.beginPath();
+        ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 2. Header Area
+    ctx.fillStyle = '#1E1B4B';
+    ctx.font = 'bold 48px "Inter", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`《${selectedWork.title}》`, cardWidth / 2, 120);
+    
+    ctx.font = '900 24px "Inter", sans-serif';
+    ctx.fillStyle = '#64748b';
+    ctx.fillText(`${selectedNode.id} · 经典传世作品`, cardWidth / 2, 170);
+
+    // 3. Vertical Text Content (The core)
+    ctx.fillStyle = '#1E1B4B';
+    ctx.font = 'bold 42px "Noto Serif SC", serif'; // Fallback to serif
+    const content = selectedWork.content.split('。').filter(Boolean).map((s: string) => s + '。');
+    
+    const startX = cardWidth - 150;
+    const startY = 250;
+    const columnGap = 80;
+    const charGap = 50;
+    
+    content.forEach((sentence: string, colIdx: number) => {
+      const x = startX - (colIdx * columnGap);
+      const chars = sentence.split('');
+      chars.forEach((char, charIdx) => {
+        const y = startY + (charIdx * charGap);
+        if (y < cardHeight - 300) {
+          ctx.fillText(char, x, y);
+        }
+      });
+    });
+
+    // 4. Appreciation Section
+    const footerY = cardHeight - 250;
+    ctx.fillStyle = 'rgba(96, 165, 250, 0.05)';
+    ctx.roundRect?.(80, footerY, cardWidth - 160, 160, 24);
+    ctx.fill();
+    ctx.strokeStyle = '#1E1B4B';
+    ctx.lineWidth = 2;
+    ctx.strokeRect?.(80, footerY, cardWidth - 160, 160);
+
+    ctx.fillStyle = '#1E1B4B';
+    ctx.font = 'italic bold 22px serif';
+    ctx.textAlign = 'left';
+    const appreciation = `这首作品展现了${selectedNode.id}卓越的艺术成就与深厚的人文底蕴。`;
+    ctx.fillText(appreciation, 110, footerY + 85);
+
+    // 5. Watermark (Enhanced for contrast)
+    const watermarkText = "LaoA's AI Lab // 诗外星辰项目";
+    ctx.font = '900 20px "Inter", sans-serif';
+    ctx.textAlign = 'right';
+    
+    // Shadow for visibility on light card
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetX = 1;
+    ctx.shadowOffsetY = 1;
+
+    ctx.fillStyle = '#1E1B4B';
+    ctx.globalAlpha = 0.5;
+    ctx.fillText(watermarkText, cardWidth - 80, cardHeight - 80);
+
+    // Export
+    const link = document.createElement('a');
+    link.download = `poem_card_${selectedWork.title}_${new Date().getTime()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }, [selectedWork, selectedNode]);
+
+  // Bind to window for UI button
+  useEffect(() => {
+    (window as any).exportPoemCard = handleExportPoemCard;
+    return () => { delete (window as any).exportPoemCard; };
+  }, [handleExportPoemCard]);
+
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-dopa-bg font-sans selection:bg-dopa-pink/30">
       {/* 3D Engine Layer - Fixed Fullscreen */}
@@ -137,13 +241,22 @@ export default function Home() {
           searchQuery={searchQuery}
           triggerFlip={flipTrigger}
           selectedNodeId={selectedNode?.id}
+          triggerExport={exportTrigger}
+          onExportFinish={() => setExportTrigger(0)}
         />
       </div>
 
       {/* UI Overlay Layer */}
       <div className="relative z-10 w-full h-full flex flex-col pointer-events-none p-3 sm:p-6 lg:p-8">
         {/* Header - Strongly Compressed for Mobile */}
-        <header className="h-16 sm:h-20 px-4 sm:px-8 clay-card flex items-center justify-between pointer-events-auto bg-white/95 backdrop-blur-sm self-center w-full max-w-7xl !border-[2px]">
+        <AnimatePresence>
+          {!isFullScreen && (
+            <motion.header 
+              initial={{ y: -100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -100, opacity: 0 }}
+              className="h-16 sm:h-20 px-4 sm:px-8 clay-card flex items-center justify-between pointer-events-auto bg-white/95 backdrop-blur-sm self-center w-full max-w-7xl !border-[2px]"
+            >
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-dopa-pink border-[2px] border-clay-dark flex items-center justify-center shadow-[3px_3px_0_#1E1B4B] -rotate-2 hover:rotate-0 transition-all cursor-pointer group shrink-0">
                <Cpu size={20} className="text-white sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
@@ -189,26 +302,71 @@ export default function Home() {
               </div>
             </button>
           </div>
-        </header>
+        </motion.header>
+          )}
+        </AnimatePresence>
 
         {/* Viewport content */}
         <div className="flex-1 mt-4 sm:mt-6 relative">
           {/* Desktop Sidebar */}
-          {isLargeScreen && (
-            <Sidebar 
-              currentDynasty={dynasty}
-              onDynastyChange={setDynasty}
-              onSearch={handleSearch}
-              isRotating={isRotating}
-              toggleRotate={() => setIsRotating(!isRotating)}
-              onFlip={resetView}
-            />
-          )}
+          <AnimatePresence>
+            {isLargeScreen && !isFullScreen && (
+              <motion.div
+                initial={{ x: -100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -100, opacity: 0 }}
+                className="pointer-events-auto h-full w-fit"
+              >
+                <Sidebar 
+                  currentDynasty={dynasty}
+                  onDynastyChange={setDynasty}
+                  onSearch={handleSearch}
+                  isRotating={isRotating}
+                  toggleRotate={() => setIsRotating(!isRotating)}
+                  onFlip={resetView}
+                  onExport={() => setExportTrigger(prev => prev + 1)}
+                  isFullScreen={isFullScreen}
+                  onToggleFullScreen={() => setIsFullScreen(!isFullScreen)}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          <Legend 
-            nodes={currentData.nodes} 
-            onFocus={handleFocus}
-          />
+          <AnimatePresence>
+            {!isFullScreen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="pointer-events-auto"
+              >
+                <Legend 
+                  nodes={currentData.nodes} 
+                  onFocus={handleFocus}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Full Screen Exit Button */}
+          <AnimatePresence>
+            {isFullScreen && (
+              <motion.div 
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 50 }}
+                className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-auto"
+              >
+                <button 
+                  onClick={() => setIsFullScreen(false)}
+                  className="px-6 py-3 bg-white/90 backdrop-blur-md border-[2px] border-clay-dark rounded-2xl flex items-center gap-2 shadow-[4px_4px_0_#1E1B4B] group hover:bg-dopa-pink hover:text-white transition-all font-[900] text-sm uppercase tracking-widest"
+                >
+                  <Minimize size={18} />
+                  <span>退出沉浸全屏</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Improved Mobile Sidebar Overlay */}
@@ -249,6 +407,9 @@ export default function Home() {
                     isRotating={isRotating}
                     toggleRotate={() => setIsRotating(!isRotating)}
                     onFlip={() => { resetView(); setMobileMenuOpen(false); }}
+                    onExport={() => { setExportTrigger(prev => prev + 1); setMobileMenuOpen(false); }}
+                    isFullScreen={isFullScreen}
+                    onToggleFullScreen={() => { setIsFullScreen(!isFullScreen); setMobileMenuOpen(false); }}
                   />
                 </div>
               </motion.div>
@@ -448,6 +609,7 @@ export default function Home() {
                 exit={{ scale: 0.9, y: 20 }}
                 className="bg-white border-[2px] border-clay-dark rounded-[2.5rem] shadow-[8px_8px_0_#1E1B4B] max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col relative"
                 onClick={(e) => e.stopPropagation()}
+                ref={poemCardRef}
               >
                 {/* Modal Header */}
                 <div className="p-6 border-b-[2px] border-clay-dark flex items-center justify-between bg-slate-50">
@@ -460,12 +622,25 @@ export default function Home() {
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{selectedNode?.id} · 经典传世</p>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => setSelectedWork(null)}
-                    className="p-2 hover:bg-slate-200 rounded-full border-[2px] border-clay-dark transition-colors group"
-                  >
-                    <X size={20} className="text-clay-dark group-hover:rotate-90 transition-transform" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Call global handleExportCard function
+                        (window as any).exportPoemCard?.();
+                      }}
+                      className="p-2 bg-dopa-pink text-white hover:bg-dopa-pink/90 rounded-full border-[2px] border-clay-dark transition-all shadow-[2.5px_2.5px_0_#1E1B4B] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 group mr-2"
+                      title="导出此诗句卡片"
+                    >
+                      <Camera size={18} className="group-hover:scale-110 transition-transform" />
+                    </button>
+                    <button 
+                      onClick={() => setSelectedWork(null)}
+                      className="p-2 hover:bg-slate-200 rounded-full border-[2px] border-clay-dark transition-colors group"
+                    >
+                      <X size={20} className="text-clay-dark group-hover:rotate-90 transition-transform" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Modal Content - Vertical Typography */}
@@ -491,8 +666,10 @@ export default function Home() {
           )}
         </AnimatePresence>
 
-        <div className="fixed bottom-3 right-4 z-40 text-[7px] sm:text-[9px] text-clay-dark font-[900] uppercase tracking-[0.2em] text-right leading-relaxed hidden sm:block opacity-30">
-          LaoA's AI Lab // 诗外星辰项目
+        <div className="fixed bottom-3 right-4 z-[100] text-[7px] sm:text-[9px] text-clay-dark font-[900] uppercase tracking-[0.2em] text-right leading-relaxed pointer-events-none opacity-40">
+          <div className="flex items-center justify-end gap-2 drop-shadow-sm">
+            <span className="bg-clay-dark/5 px-2 py-0.5 rounded-md border border-clay-dark/10">LaoA's AI Lab // 诗外星辰项目</span>
+          </div>
         </div>
       </div>
     </main>

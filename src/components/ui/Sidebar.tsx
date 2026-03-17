@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, RotateCw, Layers, Globe, Sparkles } from 'lucide-react';
+import { Search, RotateCw, Layers, Globe, Sparkles, Camera, Maximize, Minimize } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface SidebarProps {
@@ -11,6 +11,9 @@ interface SidebarProps {
   isRotating: boolean;
   toggleRotate: () => void;
   onFlip: () => void;
+  onExport: () => void;
+  isFullScreen?: boolean;
+  onToggleFullScreen?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -19,7 +22,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSearch,
   isRotating,
   toggleRotate,
-  onFlip
+  onFlip,
+  onExport,
+  isFullScreen,
+  onToggleFullScreen
 }) => {
   return (
     <motion.div 
@@ -95,7 +101,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="space-y-4">
           <button 
             onClick={toggleRotate}
-            className={`w-full flex items-center justify-between p-4 rounded-xl border-[2px] border-clay-dark font-black text-xs transition-all shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 ${
+            className={`w-full flex items-center justify-between p-3.5 rounded-xl border-[2px] border-clay-dark font-black text-xs transition-all shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 ${
               isRotating ? 'bg-dopa-green text-white' : 'bg-white text-clay-dark hover:bg-slate-50'
             }`}
           >
@@ -108,20 +114,41 @@ const Sidebar: React.FC<SidebarProps> = ({
 
           <button 
             onClick={onFlip}
-            className="w-full flex items-center gap-2 p-4 bg-white border-[2px] border-clay-dark rounded-xl text-clay-dark font-black text-xs shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all hover:bg-slate-50"
+            className="w-full flex items-center gap-2 p-3.5 bg-white border-[2px] border-clay-dark rounded-xl text-clay-dark font-black text-xs shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all hover:bg-slate-50"
           >
             <Globe size={16} className="text-dopa-blue" />
             <span>视角位置重置</span>
           </button>
 
-          <div className="pt-3 border-t-[2px] border-slate-100 flex flex-col gap-3 text-[9px] font-black uppercase tracking-widest text-slate-300">
-             <div className="flex justify-between items-center text-dopa-green">
+          {/* Action Buttons Row */}
+          <div className="grid grid-cols-2 gap-3">
+            <button 
+              onClick={onExport}
+              className="flex items-center justify-center gap-2 p-3.5 bg-dopa-pink text-white border-[2px] border-clay-dark rounded-xl font-black text-[10px] shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all hover:bg-dopa-pink/90"
+            >
+              <Camera size={14} />
+              <span>导出图片</span>
+            </button>
+
+            <button 
+              onClick={onToggleFullScreen}
+              className={`flex items-center justify-center gap-2 p-3.5 border-[2px] border-clay-dark rounded-xl font-black text-[10px] shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all ${
+                isFullScreen ? 'bg-dopa-blue text-white' : 'bg-white text-clay-dark hover:bg-slate-50'
+              }`}
+            >
+              {isFullScreen ? <Minimize size={14} /> : <Maximize size={14} />}
+              <span>{isFullScreen ? '退出沉浸' : '沉浸全屏'}</span>
+            </button>
+          </div>
+
+          <div className="pt-3 border-t-[2px] border-slate-100 flex flex-row justify-between items-center gap-3 text-[8px] font-black uppercase tracking-widest text-slate-300">
+             <div className="flex items-center gap-1.5 text-dopa-green">
                <span>渲染等级</span>
-               <span>极高</span>
+               <span className="bg-dopa-green/10 px-1.5 py-0.5 rounded-md">极高</span>
              </div>
-             <div className="flex justify-between items-center text-dopa-pink">
+             <div className="flex items-center gap-1.5 text-dopa-pink">
                <span>星尘密度</span>
-               <span>88%</span>
+               <span className="bg-dopa-pink/10 px-1.5 py-0.5 rounded-md">88.2%</span>
              </div>
           </div>
         </div>

@@ -13,6 +13,8 @@ interface StargraphProps {
   searchQuery?: string;
   triggerFlip: number;
   selectedNodeId?: string;
+  onExportFinish?: () => void;
+  triggerExport?: number;
 }
 
 const Stargraph: React.FC<StargraphProps> = ({ 
@@ -22,7 +24,9 @@ const Stargraph: React.FC<StargraphProps> = ({
   onNodeClick,
   searchQuery,
   triggerFlip,
-  selectedNodeId
+  selectedNodeId,
+  onExportFinish,
+  triggerExport
 }) => {
   const fgRef = useRef<ForceGraphMethods>();
   const [highlightNodes, setHighlightNodes] = useState<Set<string>>(new Set());
@@ -30,6 +34,20 @@ const Stargraph: React.FC<StargraphProps> = ({
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
   const [isHovered, setIsHovered] = useState(false);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+
+  // Texture cache to prevent redundant Canvas creation
+  const materialCache = useRef<Map<string, THREE.SpriteMaterial>>(new Map());
+
+  // Clear cache when highlight state changes significantly or on unmount
+  useEffect(() => {
+    return () => {
+      materialCache.current.forEach(m => {
+        if (m.map) m.map.dispose();
+        m.dispose();
+      });
+      materialCache.current.clear();
+    };
+  }, [data]); // Clear cache when data (dynasty) changes
 
   // Compute contemporary links dynamically
   const augmentedData = useMemo(() => {
@@ -151,34 +169,49 @@ const Stargraph: React.FC<StargraphProps> = ({
     const sphere = new THREE.Mesh(geometry, material);
     group.add(sphere);
 
-    // Name Label (Sprite)
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      canvas.width = 128;
-      canvas.height = 32;
-      ctx.font = 'bold 24px "Inter", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
-      // Text Shadow/Stroke for better contrast
-      ctx.strokeStyle = '#1E1B4B';
-      ctx.lineWidth = 4;
-      ctx.strokeText(node.id, 64, 16);
-      
-      // Main Text
-      ctx.fillStyle = isGlobalDimmed && !isNodeHighlighted ? '#ffffff33' : '#ffffff';
-      ctx.fillText(node.id, 64, 16);
-      
-      const texture = new THREE.CanvasTexture(canvas);
-      const spriteMaterial = new THREE.SpriteMaterial({ 
-        map: texture,
-        transparent: true,
-        opacity: isGlobalDimmed ? (isNodeHighlighted ? 1 : 0.2) : 0.9
-      });
+    // Name Label (Sprite) - Optimized 2x HD Sampling
+    const cacheKey = `${node.id}_${isGlobalDimmed}_${isNodeHighlighted}`;
+    let spriteMaterial = materialCache.current.get(cacheKey);
+
+    if (!spriteMaterial) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { alpha: true });
+      if (ctx) {
+        // Switching to KaiTi (Chinese Brush style)
+        canvas.width = 512;
+        canvas.height = 128;
+        
+        ctx.font = 'bold 80px "STKaiti", "KaiTi", "楷体", "BiauKai", serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Text Shadow/Stroke for high contrast
+        ctx.strokeStyle = '#1E1B4B';
+        ctx.lineWidth = 14; 
+        ctx.strokeText(node.id, 256, 64);
+        
+        // Main Text
+        ctx.fillStyle = isGlobalDimmed && !isNodeHighlighted ? '#ffffff33' : '#ffffff';
+        ctx.fillText(node.id, 256, 64);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        
+        spriteMaterial = new THREE.SpriteMaterial({ 
+          map: texture,
+          transparent: true,
+          opacity: isGlobalDimmed ? (isNodeHighlighted ? 1 : 0.2) : 0.9
+        });
+        
+        materialCache.current.set(cacheKey, spriteMaterial);
+      }
+    }
+
+    if (spriteMaterial) {
       const sprite = new THREE.Sprite(spriteMaterial);
       sprite.scale.set(baseSize * 4, baseSize, 1);
-      sprite.position.y = baseSize + 5; // Position above the sphere
+      sprite.position.y = baseSize + 5; 
       group.add(sprite);
     }
     
@@ -260,6 +293,71 @@ const Stargraph: React.FC<StargraphProps> = ({
     }
   }, [triggerFlip]);
 
+  // Handle Export Screenshot
+  useEffect(() => {
+    if (triggerExport && triggerExport > 0 && fgRef.current) {
+      const fg = fgRef.current;
+      // The force graph uses three.js internally. 
+      // To capture the canvas correctly, we might need to ensure preserveDrawingBuffer is true. 
+      // react-force-graph exposes its renderer through certain methods.
+      
+      const capture = () => {
+        try {
+          const originalCanvas = document.querySelector('canvas');
+          if (originalCanvas) {
+            // Create a temporary canvas for watermarking
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = originalCanvas.width;
+            tempCanvas.height = originalCanvas.height;
+            const ctx = tempCanvas.getContext('2d');
+            
+            if (ctx) {
+              // Draw the original graph
+              ctx.drawImage(originalCanvas, 0, 0);
+              
+              // Configure Watermark (Significantly larger and visible on white)
+              const fontSize = Math.max(20, originalCanvas.width / 35);
+              ctx.font = `bold ${fontSize}px "Inter", sans-serif`;
+              ctx.textAlign = 'right';
+              ctx.textBaseline = 'bottom';
+              
+              const text = "LaoA's AI Lab // 诗外星辰项目";
+              const margin = fontSize;
+              const x = originalCanvas.width - margin;
+              const y = originalCanvas.height - margin;
+
+              // High contrast shadow/stroke for visibility on pure white
+              ctx.shadowColor = 'rgba(30, 27, 75, 0.8)';
+              ctx.shadowBlur = 8;
+              ctx.strokeStyle = '#1E1B4B';
+              ctx.lineWidth = Math.max(2, fontSize / 12);
+              ctx.strokeText(text, x, y);
+              
+              // Watermark Text
+              ctx.fillStyle = '#ffffff';
+              ctx.globalAlpha = 0.9;
+              ctx.fillText(text, x, y);
+              
+              // Export
+              const dataURL = tempCanvas.toDataURL('image/png');
+              const link = document.createElement('a');
+              link.download = `stargraph_v3_2_${new Date().getTime()}.png`;
+              link.href = dataURL;
+              link.click();
+            }
+          }
+        } catch (err) {
+          console.error('Export failed:', err);
+        } finally {
+          onExportFinish?.();
+        }
+      };
+
+      // Wait a bit for any UI to settle
+      setTimeout(capture, 100);
+    }
+  }, [triggerExport, onExportFinish]);
+
   return (
     <div 
       style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0 }}
@@ -317,6 +415,7 @@ const Stargraph: React.FC<StargraphProps> = ({
         nodeRelSize={10} // Increase invisible picking area
         showNavInfo={false}
         controlType="orbit"
+        rendererConfig={{ preserveDrawingBuffer: true }}
       />
     </div>
   );
