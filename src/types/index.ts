@@ -2,6 +2,8 @@ export interface Work {
   title: string;
   content: string;
   type?: string;
+  popularity?: number;
+  tags?: string[];
 }
 
 export interface Node {
