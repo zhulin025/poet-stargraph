@@ -1,33 +1,15 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ForceGraph3D, { ForceGraphMethods } from 'react-force-graph-3d';
 import * as THREE from 'three';
-
-interface Node {
-  id: string;
-  group: number;
-  val: number;
-  color: string;
-  desc?: string;
-  x?: number;
-  y?: number;
-  z?: number;
-}
-
-interface Link {
-  source: string | Node;
-  target: string | Node;
-  value: number;
-}
+import { Node, Link, GraphData } from '../types';
 
 interface StargraphProps {
-  data: {
-    nodes: Node[];
-    links: Link[];
-  };
+  data: GraphData;
   isRotating: boolean;
-  onNodeHover: (node: Node | null) => void;
+  onNodeHover?: (node: Node | null) => void;
+  onNodeClick: (node: Node | null) => void;
   searchQuery?: string;
   triggerFlip: number;
 }
@@ -36,12 +18,63 @@ const Stargraph: React.FC<StargraphProps> = ({
   data, 
   isRotating, 
   onNodeHover, 
+  onNodeClick,
   searchQuery,
   triggerFlip 
 }) => {
   const fgRef = useRef<ForceGraphMethods>();
   const [highlightNodes, setHighlightNodes] = useState<Set<string>>(new Set());
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Compute contemporary links dynamically
+  const augmentedData = useMemo(() => {
+    if (!data || !data.nodes) return { nodes: [], links: [] };
+    
+    const nodes = data.nodes;
+    const initialLinks = data.links || [];
+    const augmentedLinks = [...initialLinks];
+    
+    // Check for contemporary relations (birth/death overlap)
+    // Only perform this if birth/death data exists to avoid unnecessary iterations
+    const hasTimeline = nodes.some(n => n.birth !== undefined && n.death !== undefined);
+    
+    if (hasTimeline) {
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const nodeA = nodes[i];
+          const nodeB = nodes[j];
+          
+          if (nodeA.birth !== undefined && nodeA.death !== undefined && 
+              nodeB.birth !== undefined && nodeB.death !== undefined) {
+            const start = Math.max(nodeA.birth, nodeB.birth);
+            const end = Math.min(nodeA.death, nodeB.death);
+            
+            if (start <= end) {
+              const overlap = end - start;
+              // Check if link already exists (comparing by ID strings)
+              const exists = augmentedLinks.some(l => {
+                const s = typeof l.source === 'string' ? l.source : (l.source as any).id;
+                const t = typeof l.target === 'string' ? l.target : (l.target as any).id;
+                return (s === nodeA.id && t === nodeB.id) || (s === nodeB.id && t === nodeA.id);
+              });
+              
+              if (!exists && overlap >= 5) {
+                augmentedLinks.push({
+                  source: nodeA.id,
+                  target: nodeB.id,
+                  value: Math.min(Math.floor(overlap / 10) + 1, 5),
+                  type: '同时代'
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    return { nodes, links: augmentedLinks };
+  }, [data]);
 
   // Update dimensions for full screen
   useEffect(() => {
@@ -124,11 +157,11 @@ const Stargraph: React.FC<StargraphProps> = ({
     if (fgRef.current) {
       const controls = fgRef.current.controls() as any;
       if (controls) {
-        controls.autoRotate = isRotating;
+        controls.autoRotate = isRotating && !isHovered;
         controls.autoRotateSpeed = 0.5;
       }
     }
-  }, [isRotating]);
+  }, [isRotating, isHovered]);
 
   // Sync camera on search
   useEffect(() => {
@@ -159,17 +192,21 @@ const Stargraph: React.FC<StargraphProps> = ({
   }, [triggerFlip]);
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0 }}>
+    <div 
+      style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0 }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <ForceGraph3D
         ref={fgRef}
-        graphData={data}
+        graphData={augmentedData}
         width={dimensions.width}
         height={dimensions.height}
         nodeThreeObject={nodeThreeObject}
         nodeLabel="id"
-        linkWidth={1.5}
-        linkColor={() => '#1E1B4B'}
-        linkDirectionalParticles={2}
+        linkWidth={(link: any) => link.type === '同时代' ? 0.5 : 1.5}
+        linkColor={(link: any) => link.type === '同时代' ? '#ffffff22' : '#1E1B4B'}
+        linkDirectionalParticles={(link: any) => link.type === '同时代' ? 0 : 2}
         linkDirectionalParticleSpeed={0.01}
         linkDirectionalParticleWidth={4}
         linkDirectionalParticleColor={() => '#FF3366'}
@@ -178,8 +215,28 @@ const Stargraph: React.FC<StargraphProps> = ({
           const nodes = new Set<string>();
           if (node) nodes.add(node.id);
           setHighlightNodes(nodes);
-          onNodeHover(node);
+          onNodeHover?.(node);
         }}
+        onNodeClick={(node: any) => {
+          if (node) {
+            onNodeClick(node);
+            
+            // Look at clicked node
+            if (fgRef.current && node.x !== undefined) {
+              fgRef.current.cameraPosition(
+                { x: node.x, y: node.y, z: node.z + 200 },
+                { x: node.x, y: node.y, z: node.z },
+                1000
+              );
+            }
+          }
+        }}
+        onBackgroundClick={(event) => {
+          // Add a small threshold or check if we are actually clicking the background
+          onNodeClick(null);
+        }}
+        enableNodeDrag={false}
+        nodeRelSize={10} // Increase invisible picking area
         showNavInfo={false}
         controlType="orbit"
       />

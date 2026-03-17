@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=ZCOOL+XiaoWei&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,7 +14,7 @@
 @layer components {
   /* Dopamine Super Clay Card - Refined 4px */
   .clay-card {
-    @apply bg-white rounded-[2rem] border-[4px] border-clay-dark transition-all duration-300;
+    @apply bg-white rounded-[2rem] border-[2px] border-clay-dark transition-all duration-300;
     box-shadow: 4px 4px 0px 0px theme('colors.clay-dark');
   }
 
@@ -26,20 +28,20 @@
   }
 
   .clay-input {
-    @apply bg-white border-[3px] border-clay-dark rounded-xl px-5 py-3 text-sm font-black
+    @apply bg-white border-[2px] border-clay-dark rounded-xl px-5 py-3 text-sm font-black
            focus:outline-none focus:ring-4 focus:ring-dopa-blue/10 transition-all duration-300
            placeholder:text-slate-400 text-clay-dark shadow-[3px_3px_0px_0px_theme('colors.clay-dark')];
   }
 
   .cartoon-button {
     @apply relative px-8 py-4 rounded-xl font-black text-white bg-dopa-blue 
-           border-[3px] border-clay-dark shadow-[4px_4px_0px_0px_theme('colors.clay-dark')] 
+           border-[2px] border-clay-dark shadow-[4px_4px_0px_0px_theme('colors.clay-dark')] 
            active:shadow-none active:translate-x-[4px] active:translate-y-[4px] transition-all duration-100
            hover:scale-105;
   }
 
   .mobile-menu-btn {
-    @apply w-12 h-12 rounded-xl bg-white border-[3px] border-clay-dark flex items-center justify-center 
+    @apply w-12 h-12 rounded-xl bg-white border-[2px] border-clay-dark flex items-center justify-center 
            shadow-[4px_4px_0px_0px_theme('colors.clay-dark')] active:shadow-none 
            active:translate-x-1 active:translate-y-1 transition-all outline-none;
   }
@@ -63,4 +65,19 @@
 }
 ::-webkit-scrollbar-thumb {
   @apply bg-clay-dark rounded-full;
+}
+
+/* Classical Chinese Typography */
+.classical-vertical {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-family: 'Noto Serif SC', serif;
+}
+
+.classical-serif {
+  font-family: 'Noto Serif SC', serif;
+}
+
+.classical-handwritten {
+  font-family: 'ZCOOL XiaoWei', serif;
 }

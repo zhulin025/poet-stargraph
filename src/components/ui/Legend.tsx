@@ -1,12 +1,13 @@
 'use client';
 
 import React from 'react';
-import { Star } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Node } from '../../types';
+import { Star } from 'lucide-react';
 
 interface LegendProps {
-  nodes: any[];
-  onFocus: (node: any) => void;
+  nodes: Node[];
+  onFocus: (node: Node) => void;
 }
 
 const Legend: React.FC<LegendProps> = ({ nodes, onFocus }) => {
@@ -19,7 +20,7 @@ const Legend: React.FC<LegendProps> = ({ nodes, onFocus }) => {
       animate={{ y: 0, opacity: 1 }}
       className="fixed bottom-2 left-2 right-2 sm:bottom-4 sm:left-4 sm:right-4 z-40 lg:left-[22rem] lg:right-8 pointer-events-auto"
     >
-      <div className="clay-panel !p-2 sm:!p-3 bg-white/95 backdrop-blur-sm shadow-[3px_3px_0px_0px_#1E1B4B] w-full border-[2.5px] border-clay-dark flex flex-col gap-1 sm:gap-2 overflow-hidden max-h-[20vh] sm:max-h-none">
+      <div className="clay-panel !p-2 sm:!p-3 bg-white/95 backdrop-blur-sm shadow-[3px_3px_0px_0px_#1E1B4B] w-full border-[2px] border-clay-dark flex flex-col gap-1 sm:gap-2 overflow-hidden max-h-[20vh] sm:max-h-none">
         {/* Header Block - Ultra Compressed */}
         <div className="flex items-center justify-between gap-2 border-b-2 border-slate-100 pb-1">
           <div className="flex items-center gap-1.5 text-[8px] sm:text-[9px] font-black uppercase tracking-[0.1em] text-dopa-pink shrink-0">
@@ -32,7 +33,7 @@ const Legend: React.FC<LegendProps> = ({ nodes, onFocus }) => {
         </div>
  
         {/* Cards Row - Height reduced by another ~50% */}
-        <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-1 pt-0.5 scrollbar-hide snap-x h-auto">
+        <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 pt-0.5 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent snap-x h-auto">
           {topPoets.map((poet, i) => (
             <motion.button
               key={poet.id}
@@ -49,12 +50,12 @@ const Legend: React.FC<LegendProps> = ({ nodes, onFocus }) => {
               <span className="text-[10px] sm:text-xs font-[900] text-clay-dark group-hover:text-dopa-blue transition-colors tracking-tighter italic truncate w-full text-center">
                 {poet.id}
               </span>
-              <div className="px-1 py-0.2 bg-dopa-pink rounded-full border-[1.5px] border-clay-dark shadow-[1px_1px_0_#000]">
+               <div className="px-1 py-0.2 bg-dopa-pink rounded-full border-[2px] border-clay-dark shadow-[1px_1px_0_#000]">
                 <span className="text-[7px] sm:text-[8px] text-white font-black">{poet.val}</span>
               </div>
             </motion.button>
           ))}
-          <div className="flex-shrink-0 w-2 h-full" />
+          <div className="flex-shrink-0 w-4 h-full" />
         </div>
       </div>
     </motion.div>

@@ -5,8 +5,8 @@ import { Search, RotateCw, Layers, Globe, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface SidebarProps {
-  currentDynasty: 'song' | 'tang' | 'yuan';
-  onDynastyChange: (dynasty: 'song' | 'tang' | 'yuan') => void;
+  currentDynasty: 'song' | 'tang' | 'yuan' | 'ming' | 'qing';
+  onDynastyChange: (dynasty: 'song' | 'tang' | 'yuan' | 'ming' | 'qing') => void;
   onSearch: (query: string) => void;
   isRotating: boolean;
   toggleRotate: () => void;
@@ -28,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       className="flex flex-col gap-4 w-full lg:w-80 z-40 pointer-events-auto h-full"
     >
       {/* 搜索框 */}
-      <div className="clay-panel !p-6">
+      <div className="clay-panel !p-6 !border-[2px]">
         <div className="flex items-center gap-2 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-dopa-pink">
           <Search size={16} className="animate-dopa-bounce" />
           <span>文豪搜索</span>
@@ -38,37 +38,56 @@ const Sidebar: React.FC<SidebarProps> = ({
             type="text"
             placeholder="搜索诗人名字..."
             onChange={(e) => onSearch(e.target.value)}
-            className="clay-input w-full group-hover:scale-[1.01] transition-transform"
+            className="clay-input w-full group-hover:scale-[1.01] transition-transform !border-[2px]"
           />
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-clay-dark/20 group-focus-within:text-dopa-blue transition-colors" size={18} />
         </div>
       </div>
 
       {/* 朝代切换 */}
-      <div className="clay-panel !p-5 bg-dopa-yellow/5">
+      <div className="clay-panel !p-5 bg-dopa-yellow/5 !border-[2px]">
         <div className="flex items-center gap-2 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-dopa-green">
           <Sparkles size={16} />
           <span>时空通讯站</span>
         </div>
-        <div className="flex p-1.5 bg-clay-dark rounded-2xl relative shadow-lg border-[3px] border-clay-dark">
-          {(['song', 'tang', 'yuan'] as const).map((d) => (
-            <button
-              key={d}
-              onClick={() => onDynastyChange(d)}
-              className={`flex-1 py-3 text-[10px] font-[900] rounded-xl transition-all duration-300 relative z-10 ${
-                currentDynasty === d 
-                   ? 'bg-dopa-yellow text-clay-dark shadow-[2px_2px_0_#000]' 
-                   : 'text-white hover:text-dopa-yellow'
-              }`}
-            >
-              {d === 'song' ? '大宋' : d === 'tang' ? '盛唐' : '大元'}
-            </button>
-          ))}
+        <div className="grid grid-cols-6 p-1.5 bg-clay-dark rounded-2xl relative shadow-lg border-[2px] border-clay-dark gap-1.5">
+          {/* Row 1: Tang, Song */}
+          <div className="col-span-3 flex gap-1.5">
+            {(['tang', 'song'] as const).map((d) => (
+              <button
+                key={d}
+                onClick={() => onDynastyChange(d)}
+                className={`flex-1 py-3 text-[12px] font-[900] rounded-xl transition-all duration-300 relative z-10 ${
+                  currentDynasty === d 
+                     ? 'bg-dopa-yellow text-clay-dark shadow-[2px_2px_0_#000]' 
+                     : 'text-white hover:text-dopa-yellow'
+                }`}
+              >
+                {d === 'song' ? '大宋' : '盛唐'}
+              </button>
+            ))}
+          </div>
+          {/* Row 2: Yuan, Ming, Qing */}
+          <div className="col-span-3 flex gap-1.5">
+            {(['yuan', 'ming', 'qing'] as const).map((d) => (
+              <button
+                key={d}
+                onClick={() => onDynastyChange(d)}
+                className={`flex-1 py-3 text-[12px] font-[900] rounded-xl transition-all duration-300 relative z-10 ${
+                  currentDynasty === d 
+                     ? 'bg-dopa-yellow text-clay-dark shadow-[2px_2px_0_#000]' 
+                     : 'text-white hover:text-dopa-yellow'
+                }`}
+              >
+                {d === 'yuan' ? '大元' : d === 'ming' ? '大明' : '大清'}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* 控制中心 */}
-      <div className="clay-panel !p-6">
+      <div className="clay-panel !p-6 !border-[2px]">
         <div className="flex items-center gap-2 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-dopa-blue">
           <Layers size={16} />
           <span>引擎控制参数</span>
@@ -76,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="space-y-4">
           <button 
             onClick={toggleRotate}
-            className={`w-full flex items-center justify-between p-4 rounded-xl border-[3px] border-clay-dark font-black text-xs transition-all shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 ${
+            className={`w-full flex items-center justify-between p-4 rounded-xl border-[2px] border-clay-dark font-black text-xs transition-all shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 ${
               isRotating ? 'bg-dopa-green text-white' : 'bg-white text-clay-dark hover:bg-slate-50'
             }`}
           >
@@ -89,13 +108,13 @@ const Sidebar: React.FC<SidebarProps> = ({
 
           <button 
             onClick={onFlip}
-            className="w-full flex items-center gap-2 p-4 bg-white border-[3px] border-clay-dark rounded-xl text-clay-dark font-black text-xs shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all hover:bg-slate-50"
+            className="w-full flex items-center gap-2 p-4 bg-white border-[2px] border-clay-dark rounded-xl text-clay-dark font-black text-xs shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all hover:bg-slate-50"
           >
             <Globe size={16} className="text-dopa-blue" />
             <span>视角位置重置</span>
           </button>
 
-          <div className="pt-3 border-t-[3px] border-slate-100 flex flex-col gap-3 text-[9px] font-black uppercase tracking-widest text-slate-300">
+          <div className="pt-3 border-t-[2px] border-slate-100 flex flex-col gap-3 text-[9px] font-black uppercase tracking-widest text-slate-300">
              <div className="flex justify-between items-center text-dopa-green">
                <span>渲染等级</span>
                <span>极高</span>
