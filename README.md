@@ -5,6 +5,7 @@
 一个基于多巴胺波普风格 (Dopamine Pop Style) 的 3D 文人关系时空观测站。利用 3D 引力图可视化从盛唐到大清历代诗人的社交网络、影响力矩阵及传世名篇。
 
 ![项目截图](public/screenshot.png)
+![功能展示](public/screenshot2.png)
 
 ## ✨ 核心特性
 
