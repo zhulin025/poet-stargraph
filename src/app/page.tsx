@@ -340,7 +340,7 @@ export default function Home() {
         </AnimatePresence>
 
         <div className="fixed bottom-3 right-4 z-40 text-[7px] sm:text-[9px] text-clay-dark font-[900] uppercase tracking-[0.2em] text-right leading-relaxed hidden sm:block opacity-30">
-          ANTIGRAVITY 实验室 // 时空观测站
+          LaoA's AI Lab // 诗外星辰项目
         </div>
       </div>
     </main>
