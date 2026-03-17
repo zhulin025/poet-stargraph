@@ -10,12 +10,15 @@ export const songData: { nodes: Node[], links: Link[] } = {
     "desc": "字子瞻，号东坡居士，北宋文学家、书法家、画家，'唐宋八大家'之一，豪放派词人代表。",
     "birth": 1037,
     "death": 1101,
+    "locations": ["眉山", "汴京", "杭州", "密州", "黄州", "儋州"],
     "works": [
       {
         "title": "水调歌头·明月几时有",
         "type": "词",
         "content": "明月几时有？把酒问青天。不知天上宫阙，今夕是何年。我欲乘风归去，又恐琼楼玉宇，高处不胜寒。起舞弄清影，何似在人间。转朱阁，低绮户，照无眠。不应有恨，何事长向别时圆？人有悲欢离合，月有阴晴圆缺，此事古难全。但愿人长久，千里共婵娟。",
         "popularity": 1000,
+        "isGift": true,
+        "recipientId": "苏辙",
         "tags": [
           "中秋",
           "哲理",
@@ -72,6 +75,7 @@ export const songData: { nodes: Node[], links: Link[] } = {
     "desc": "字幼安，号稼轩，南宋豪放派词人，有'词中之龙'之称，与苏轼合称'苏辛'。",
     "birth": 1140,
     "death": 1207,
+    "locations": ["济南", "汴京", "南京", "上饶"],
     "works": [
       {
         "title": "青玉案·元夕",
@@ -133,6 +137,7 @@ export const songData: { nodes: Node[], links: Link[] } = {
     "desc": "号易安居士，宋代女词人，婉约词派代表，有'千古第一才女'之称。",
     "birth": 1084,
     "death": 1155,
+    "locations": ["济南", "汴京", "青州", "杭州", "金华"],
     "works": [
       {
         "title": "声声慢·寻寻觅觅",
@@ -194,6 +199,7 @@ export const songData: { nodes: Node[], links: Link[] } = {
     "desc": "字务观，号放翁，南宋文学家、史学家、爱国诗人，现存诗作最多的诗人之一。",
     "birth": 1125,
     "death": 1210,
+    "locations": ["绍兴", "成都", "汉中", "临安"],
     "works": [
       {
         "title": "示儿",
@@ -2022,13 +2028,15 @@ export const songData: { nodes: Node[], links: Link[] } = {
     "source": "苏轼",
     "target": "苏辙",
     "value": 10,
-    "type": "兄弟"
+    "type": "亲属",
+    "description": "手足情深，苏轼多首千古名篇（如《水调歌头》）均是为其弟苏辙所作。"
   },
   {
     "source": "苏轼",
     "target": "黄庭坚",
     "value": 8,
-    "type": "师生"
+    "type": "师徒",
+    "description": "黄庭坚为'苏门四学士'之首，两人亦师亦友，共同开创了宋代文学的新风气。"
   },
   {
     "source": "苏轼",
@@ -2052,7 +2060,8 @@ export const songData: { nodes: Node[], links: Link[] } = {
     "source": "辛弃疾",
     "target": "苏轼",
     "value": 8,
-    "type": "合称"
+    "type": "合称",
+    "description": "虽然生活年代不同，但两人同为豪放派词论的巅峰，世并称'苏辛'。"
   },
   {
     "source": "王安石",

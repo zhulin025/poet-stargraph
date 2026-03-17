@@ -4,6 +4,8 @@ export interface Work {
   type?: string;
   popularity?: number;
   tags?: string[];
+  isGift?: boolean;
+  recipientId?: string;
 }
 
 export interface Node {
@@ -14,6 +16,7 @@ export interface Node {
   desc?: string;
   birth?: number;
   death?: number;
+  locations?: string[];
   works?: Work[];
   x?: number;
   y?: number;
@@ -25,6 +28,7 @@ export interface Link {
   target: string | Node;
   value: number;
   type?: string;
+  description?: string;
 }
 
 export interface GraphData {

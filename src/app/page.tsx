@@ -50,6 +50,7 @@ export default function Home() {
     }
   }, [dynasty]);
 
+
   const handleSearch = useCallback((q: string) => {
     setSearchQuery(q);
   }, []);
@@ -57,7 +58,69 @@ export default function Home() {
   const handleFocus = useCallback((node: any) => {
     setSearchQuery(node.id);
     setSelectedNode(node);
+    setMobileMenuOpen(false);
   }, []);
+
+  const socialConnections = useMemo(() => {
+    if (!selectedNode) return [];
+    
+    // Use Map to deduplicate by targetId and aggregate relationship types
+    const connectionsMap = new Map<string, any>();
+
+    currentData.links
+      .filter(l => {
+        const s = typeof l.source === 'string' ? l.source : (l.source as any).id;
+        const t = typeof l.target === 'string' ? l.target : (l.target as any).id;
+        return s === selectedNode.id || t === selectedNode.id;
+      })
+      .forEach(l => {
+        const s = typeof l.source === 'string' ? l.source : (l.source as any).id;
+        const t = typeof l.target === 'string' ? l.target : (l.target as any).id;
+        const targetId = s === selectedNode.id ? t : s;
+        
+        if (!connectionsMap.has(targetId)) {
+          const targetNode = currentData.nodes.find(n => n.id === targetId);
+          if (targetNode) {
+            connectionsMap.set(targetId, {
+              node: targetNode,
+              types: [l.type],
+              descriptions: l.description ? [l.description] : []
+            });
+          }
+        } else {
+          const existing = connectionsMap.get(targetId);
+          if (l.type && !existing.types.includes(l.type)) {
+            existing.types.push(l.type);
+          }
+          if (l.description && !existing.descriptions.includes(l.description)) {
+            existing.descriptions.push(l.description);
+          }
+        }
+      });
+    
+    return Array.from(connectionsMap.values());
+  }, [selectedNode, currentData]);
+
+  // Logic for Spatiotemporal Overlap
+  const spatiotemporalOverlaps = useMemo(() => {
+    if (!selectedNode || !selectedNode.locations) return [];
+    
+    return currentData.nodes
+      .filter(n => n.id !== selectedNode.id && n.locations)
+      .map(n => {
+        const sharedLocs = n.locations?.filter(loc => selectedNode.locations?.includes(loc));
+        if (sharedLocs && sharedLocs.length > 0) {
+          // Check for lifespan overlap
+          const start = Math.max(selectedNode.birth || -9999, n.birth || -9999);
+          const end = Math.min(selectedNode.death || 9999, n.death || 9999);
+          if (start <= end) {
+            return { node: n, locations: sharedLocs };
+          }
+        }
+        return null;
+      })
+      .filter(Boolean) as any[];
+  }, [selectedNode, currentData]);
 
   const resetView = useCallback(() => {
     setFlipTrigger(prev => prev + 1);
@@ -73,6 +136,7 @@ export default function Home() {
           onNodeClick={setSelectedNode}
           searchQuery={searchQuery}
           triggerFlip={flipTrigger}
+          selectedNodeId={selectedNode?.id}
         />
       </div>
 
@@ -238,7 +302,79 @@ export default function Home() {
                   </p>
                 </div>
 
-                {/* Classic Works Section */}
+                {/* 社交圈 - 深度连接 (Moved above works) */}
+                {socialConnections.length > 0 && (
+                  <div className="mb-6 pt-4 border-t-2 border-slate-100/50">
+                    <div className="text-[8px] font-black text-dopa-blue uppercase tracking-widest mb-3 flex items-center gap-2">
+                       <Sparkles size={12} className="text-dopa-blue animate-pulse" />
+                       <span>社交名士圈</span>
+                    </div>
+                    <div className="flex flex-col gap-2.5">
+                      {socialConnections.map((conn, i) => (
+                        <div 
+                          key={i} 
+                          className="group cursor-pointer" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFocus(conn.node);
+                          }}
+                        >
+                           <div className="flex items-center gap-3 p-2.5 rounded-xl border-[2px] border-slate-100 bg-slate-50/50 hover:border-dopa-blue hover:bg-white transition-all shadow-sm hover:shadow-md active:scale-95 group">
+                              <div className="w-8 h-8 rounded-lg border-[2px] border-clay-dark flex-shrink-0 shadow-[1px_1px_0_#1E1B4B] flex items-center justify-center text-[10px] font-black text-white" style={{ backgroundColor: conn.node.color }}>
+                                {conn.node.id[0]}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-[11px] font-black text-clay-dark group-hover:text-dopa-blue transition-colors">
+                                    {conn.node.id}
+                                  </span>
+                                  {conn.types.map((t: string, ti: number) => (
+                                    <span key={ti} className={`text-[7px] px-1.5 py-0.2 rounded-md border font-black uppercase tracking-tighter ${
+                                      t === '好友' ? 'bg-dopa-blue/10 text-dopa-blue border-dopa-blue/20' :
+                                      t === '师徒' || t === '学生' || t === '老师' ? 'bg-dopa-green/10 text-dopa-green border-dopa-green/20' :
+                                      'bg-dopa-pink/10 text-dopa-pink border-dopa-pink/20'
+                                    }`}>
+                                      {t}
+                                    </span>
+                                  ))}
+                                </div>
+                                {conn.descriptions.length > 0 && (
+                                  <p className="text-[9px] text-slate-400 line-clamp-1 mt-0.5 font-bold group-hover:text-slate-500">
+                                    {conn.descriptions[0]}
+                                  </p>
+                                )}
+                              </div>
+                           </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 时空同台 - 自动识别 shared locations */}
+                {spatiotemporalOverlaps.length > 0 && (
+                  <div className="mb-6 pt-4 border-t-2 border-slate-100/50">
+                    <div className="text-[8px] font-black text-dopa-green uppercase tracking-widest mb-3 flex items-center gap-2">
+                       <X size={12} className="text-dopa-green animate-bounce" />
+                       <span>时空交集点</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {spatiotemporalOverlaps.slice(0, 3).map((overlap, i) => (
+                        <div 
+                          key={i} 
+                          onClick={() => handleFocus(overlap.node)}
+                          className="px-2 py-1.5 bg-dopa-green/5 border-[2px] border-clay-dark rounded-lg cursor-pointer hover:bg-dopa-green/10 transition-colors group flex items-center gap-2"
+                        >
+                          <span className="text-[9px] font-black text-clay-dark">
+                            在 <span className="text-dopa-green">{overlap.locations[0]}</span> 偶遇 <span className="text-dopa-blue">{overlap.node.id}</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Classic Works Section (Now below social) */}
                 {selectedNode.works && selectedNode.works.length > 0 && (
                   <div className="mb-4">
                     <div className="text-[8px] font-black text-dopa-pink uppercase tracking-widest mb-2 flex items-center gap-2">
@@ -252,8 +388,24 @@ export default function Home() {
                           onClick={() => setSelectedWork(work)}
                           className="p-2 bg-white border-[2px] border-clay-dark rounded-lg shadow-[2px_2px_0_#1E1B4B] hover:translate-x-1 transition-transform cursor-pointer group"
                         >
-                          <div className="text-[11px] font-[900] text-clay-dark flex justify-between">
-                            <span>《{work.title}》</span>
+                          <div className="text-[11px] font-[900] text-clay-dark flex justify-between items-center">
+                            <span className="flex items-center gap-1">
+                              《{work.title}》
+                              {work.isGift && (
+                                <span 
+                                  className="text-[7px] bg-dopa-pink text-white px-1 rounded-sm cursor-help flex items-center gap-0.5"
+                                  onClick={(e) => {
+                                    if (work.recipientId) {
+                                      e.stopPropagation();
+                                      const rNode = currentData.nodes.find(n => n.id === work.recipientId);
+                                      if (rNode) handleFocus(rNode);
+                                    }
+                                  }}
+                                >
+                                  赠 {work.recipientId}
+                                </span>
+                              )}
+                            </span>
                             <span className="text-[8px] text-dopa-pink opacity-0 group-hover:opacity-100 transition-opacity font-black">点读全文</span>
                           </div>
                           <div className="text-[9px] text-slate-500 line-clamp-3 mt-0.5 font-medium italic">

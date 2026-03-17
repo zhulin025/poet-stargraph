@@ -113,6 +113,7 @@ export const mingData: { nodes: Node[], links: Link[] } = {
     "desc": "字伯虎，号六如居士，明代画家、诗人，'吴中四才子'之一。",
     "birth": 1470,
     "death": 1524,
+    "locations": ["苏州", "南京"],
     "works": [
       {
         "title": "桃花庵歌",
@@ -155,6 +156,7 @@ export const mingData: { nodes: Node[], links: Link[] } = {
     "desc": "原名壁，字徵明，号衡山居士，明代画家、书法家、诗人，'吴中四才子'之一。",
     "birth": 1470,
     "death": 1559,
+    "locations": ["苏州", "汴京"],
     "works": [
       {
         "title": "念奴娇·赤壁怀古",
@@ -1945,19 +1947,22 @@ export const mingData: { nodes: Node[], links: Link[] } = {
     "source": "王世贞",
     "target": "李攀龙",
     "value": 8,
-    "type": "同门"
+    "type": "同门",
+    "description": "均列'后七子'，共同倡导文学复古运动。"
   },
   {
     "source": "袁宏道",
     "target": "袁中道",
     "value": 9,
-    "type": "兄弟"
+    "type": "兄弟",
+    "description": "公安派二袁，其文学主张对晚明小品文影响深远。"
   },
   {
     "source": "高启",
     "target": "宋濂",
     "value": 6,
-    "type": "同代"
+    "type": "同代",
+    "description": "明初文坛领袖，共同奠定了明代文学的基调。"
   }
 ]
 };

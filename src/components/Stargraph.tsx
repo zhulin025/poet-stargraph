@@ -12,6 +12,7 @@ interface StargraphProps {
   onNodeClick: (node: Node | null) => void;
   searchQuery?: string;
   triggerFlip: number;
+  selectedNodeId?: string;
 }
 
 const Stargraph: React.FC<StargraphProps> = ({ 
@@ -20,12 +21,15 @@ const Stargraph: React.FC<StargraphProps> = ({
   onNodeHover, 
   onNodeClick,
   searchQuery,
-  triggerFlip 
+  triggerFlip,
+  selectedNodeId
 }) => {
   const fgRef = useRef<ForceGraphMethods>();
   const [highlightNodes, setHighlightNodes] = useState<Set<string>>(new Set());
+  const [highlightLinks, setHighlightLinks] = useState<Set<any>>(new Set());
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
   const [isHovered, setIsHovered] = useState(false);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
   // Compute contemporary links dynamically
   const augmentedData = useMemo(() => {
@@ -101,25 +105,90 @@ const Stargraph: React.FC<StargraphProps> = ({
     return colorMap[baseColor.toLowerCase()] || baseColor;
   }, []);
 
+  // Manage highlight state based on selection or hover
+  useEffect(() => {
+    const nodes = new Set<string>();
+    const links = new Set<any>();
+
+    // Priority: hovered node or selected node
+    const activeId = hoveredNodeId || selectedNodeId;
+
+    if (activeId) {
+      nodes.add(activeId);
+      augmentedData.links.forEach((link: any) => {
+        const s = typeof link.source === 'string' ? link.source : (link.source as any).id;
+        const t = typeof link.target === 'string' ? link.target : (link.target as any).id;
+        
+        if (s === activeId || t === activeId) {
+          nodes.add(s);
+          nodes.add(t);
+          links.add(link);
+        }
+      });
+    }
+
+    setHighlightNodes(nodes);
+    setHighlightLinks(links);
+  }, [selectedNodeId, hoveredNodeId, augmentedData]);
+
   const nodeThreeObject = useCallback((node: any) => {
     const group = new THREE.Group();
-    const isHighlighted = highlightNodes.has(node.id) || highlightNodes.size === 0;
+    // If something is highlighted, check if this node is in the set.
+    // If nothing is highlighted, everything is normal brightness.
+    const isGlobalDimmed = highlightNodes.size > 0;
+    const isNodeHighlighted = highlightNodes.has(node.id);
+    
     const baseSize = Math.log(node.val + 2) * 2.5;
     const cartoonColor = getCartoonColor(node.color);
     
+    // Core Sphere
     const geometry = new THREE.SphereGeometry(baseSize, 32, 32);
     const material = new THREE.MeshToonMaterial({
       color: cartoonColor,
       transparent: true,
-      opacity: isHighlighted ? 1 : 0.2
+      opacity: isGlobalDimmed ? (isNodeHighlighted ? 1 : 0.1) : 1
     });
     const sphere = new THREE.Mesh(geometry, material);
+    group.add(sphere);
+
+    // Name Label (Sprite)
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      canvas.width = 128;
+      canvas.height = 32;
+      ctx.font = 'bold 24px "Inter", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Text Shadow/Stroke for better contrast
+      ctx.strokeStyle = '#1E1B4B';
+      ctx.lineWidth = 4;
+      ctx.strokeText(node.id, 64, 16);
+      
+      // Main Text
+      ctx.fillStyle = isGlobalDimmed && !isNodeHighlighted ? '#ffffff33' : '#ffffff';
+      ctx.fillText(node.id, 64, 16);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      const spriteMaterial = new THREE.SpriteMaterial({ 
+        map: texture,
+        transparent: true,
+        opacity: isGlobalDimmed ? (isNodeHighlighted ? 1 : 0.2) : 0.9
+      });
+      const sprite = new THREE.Sprite(spriteMaterial);
+      sprite.scale.set(baseSize * 4, baseSize, 1);
+      sprite.position.y = baseSize + 5; // Position above the sphere
+      group.add(sprite);
+    }
     
-    if (isHighlighted) {
+    if (isNodeHighlighted) {
       const outlineGeo = new THREE.SphereGeometry(baseSize * 1.1, 32, 32);
       const outlineMat = new THREE.MeshBasicMaterial({
         color: 0x1E1B4B,
-        side: THREE.BackSide
+        side: THREE.BackSide,
+        transparent: true,
+        opacity: 0.8
       });
       group.add(new THREE.Mesh(outlineGeo, outlineMat));
       
@@ -127,15 +196,15 @@ const Stargraph: React.FC<StargraphProps> = ({
       const glowMat = new THREE.MeshBasicMaterial({
         color: cartoonColor,
         transparent: true,
-        opacity: 0.15,
+        opacity: node.id === (hoveredNodeId || selectedNodeId) ? 0.3 : 0.1,
         blending: THREE.AdditiveBlending
       });
       group.add(new THREE.Mesh(glowGeo, glowMat));
     }
     
-    group.add(sphere);
     return group;
-  }, [highlightNodes, getCartoonColor]);
+  }, [highlightNodes, getCartoonColor, hoveredNodeId, selectedNodeId]);
+
 
   useEffect(() => {
     if (!fgRef.current) return;
@@ -204,17 +273,26 @@ const Stargraph: React.FC<StargraphProps> = ({
         height={dimensions.height}
         nodeThreeObject={nodeThreeObject}
         nodeLabel="id"
-        linkWidth={(link: any) => link.type === '同时代' ? 0.5 : 1.5}
-        linkColor={(link: any) => link.type === '同时代' ? '#ffffff22' : '#1E1B4B'}
-        linkDirectionalParticles={(link: any) => link.type === '同时代' ? 0 : 2}
-        linkDirectionalParticleSpeed={0.01}
-        linkDirectionalParticleWidth={4}
-        linkDirectionalParticleColor={() => '#FF3366'}
+        linkWidth={(link: any) => {
+          if (highlightNodes.size > 0 && !highlightLinks.has(link)) return 0.2;
+          return link.type === '同时代' ? 0.5 : 2;
+        }}
+        linkColor={(link: any) => {
+          const isHighlighted = highlightLinks.has(link);
+          const isGlobalDimmed = highlightNodes.size > 0;
+          if (isGlobalDimmed && !isHighlighted) return '#ffffff11';
+          return link.type === '同时代' ? '#ffffff44' : '#1E1B4B';
+        }}
+        linkDirectionalParticles={(link: any) => {
+          if (highlightNodes.size > 0 && !highlightLinks.has(link)) return 0;
+          return link.type === '同时代' ? 0 : 3;
+        }}
+        linkDirectionalParticleSpeed={0.015}
+        linkDirectionalParticleWidth={(link: any) => highlightLinks.has(link) ? 6 : 4}
+        linkDirectionalParticleColor={(link: any) => highlightLinks.has(link) ? '#FFEB3B' : '#FF3366'}
         backgroundColor="rgba(0,0,0,0)"
         onNodeHover={(node: any) => {
-          const nodes = new Set<string>();
-          if (node) nodes.add(node.id);
-          setHighlightNodes(nodes);
+          setHoveredNodeId(node ? node.id : null);
           onNodeHover?.(node);
         }}
         onNodeClick={(node: any) => {

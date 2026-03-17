@@ -10,6 +10,7 @@ export const qingData: { nodes: Node[], links: Link[] } = {
     "desc": "名霑，字梦阮，著《红楼梦》。",
     "birth": 1715,
     "death": 1763,
+    "locations": ["南京", "北京"],
     "works": [
       {
         "title": "葬花吟",
@@ -43,6 +44,7 @@ export const qingData: { nodes: Node[], links: Link[] } = {
     "desc": "字容若，号楞伽山人，'清代第一词人'。",
     "birth": 1655,
     "death": 1685,
+    "locations": ["北京"],
     "works": [
       {
         "title": "木兰花·拟古决绝词柬友",
@@ -1612,19 +1614,22 @@ export const qingData: { nodes: Node[], links: Link[] } = {
     "source": "曾国藩",
     "target": "左宗棠",
     "value": 7,
-    "type": "同僚"
+    "type": "同僚",
+    "description": "晚清重臣，共同经历了太平天国运动，虽有矛盾但也互相推重。"
   },
   {
     "source": "纳兰性德",
     "target": "曹雪芹",
     "value": 5,
-    "type": "同代"
+    "type": "同代",
+    "description": "纳兰词与红楼梦皆具浓郁的感伤气质，虽无直接交往，但家族背景与文学风味相近。"
   },
   {
     "source": "秋瑾",
     "target": "谭嗣同",
     "value": 7,
-    "type": "同志"
+    "type": "同志",
+    "description": "近代民主革命先行者，共同展现了为国捐躯的大无畏精神。"
   }
 ]
 };

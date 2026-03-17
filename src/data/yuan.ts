@@ -10,6 +10,7 @@ export const yuanData: { nodes: Node[], links: Link[] } = {
     "desc": "号已斋叟，元代杂剧奠基人，'元曲四大家'之首，被誉为'曲圣'。",
     "birth": 1234,
     "death": 1300,
+    "locations": ["大都", "太原"],
     "works": [
       {
         "title": "南吕·一枝花·不伏老",
@@ -51,6 +52,7 @@ export const yuanData: { nodes: Node[], links: Link[] } = {
     "desc": "字千里，号东篱，元代著名戏曲家、散曲家，'元曲四大家'之一。",
     "birth": 1250,
     "death": 1321,
+    "locations": ["大都", "杭州"],
     "works": [
       {
         "title": "天净沙·秋思",
@@ -1685,19 +1687,22 @@ export const yuanData: { nodes: Node[], links: Link[] } = {
     "source": "关汉卿",
     "target": "白朴",
     "value": 7,
-    "type": "合称"
+    "type": "合称",
+    "description": "均为'元曲四大家'成员，共同推动了元杂剧的兴盛。"
   },
   {
     "source": "乔吉",
     "target": "张可久",
     "value": 8,
-    "type": "合称"
+    "type": "合称",
+    "description": "元代散曲双峰，世称'乔张'。"
   },
   {
     "source": "王实甫",
     "target": "关汉卿",
     "value": 6,
-    "type": "同代"
+    "type": "同代",
+    "description": "元代杂剧双雄，分别创作了《西厢记》与《窦娥冤》。"
   }
 ]
 };

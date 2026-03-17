@@ -10,6 +10,7 @@ export const tangData: { nodes: Node[], links: Link[] } = {
     "desc": "字太白，号青莲居士，唐代伟大的浪漫主义诗人，被后人誉为'诗仙'。",
     "birth": 701,
     "death": 762,
+    "locations": ["长安", "洛阳", "蜀地", "浔阳", "梁宋"],
     "works": [
       {
         "title": "静夜思",
@@ -56,6 +57,8 @@ export const tangData: { nodes: Node[], links: Link[] } = {
         "type": "七言绝句",
         "content": "李白乘舟将欲行，忽闻岸上踏歌声。桃花潭水深千尺，不及汪伦送我情。",
         "popularity": 920,
+        "isGift": true,
+        "recipientId": "汪伦",
         "tags": [
           "友情",
           "送别"
@@ -71,6 +74,7 @@ export const tangData: { nodes: Node[], links: Link[] } = {
     "desc": "字子美，号少陵野老，唐代伟大的现实主义诗人，被后人誉为'诗圣'。",
     "birth": 712,
     "death": 770,
+    "locations": ["长安", "洛阳", "成都", "夔州", "梁宋"],
     "works": [
       {
         "title": "春望",
@@ -132,6 +136,7 @@ export const tangData: { nodes: Node[], links: Link[] } = {
     "desc": "字乐天，号香山居士，唐代伟大的现实主义诗人，新乐府运动的主要倡导者。",
     "birth": 772,
     "death": 846,
+    "locations": ["长安", "杭州", "苏州", "洛阳", "浔阳"],
     "works": [
       {
         "title": "赋得古原草送别",
@@ -193,6 +198,7 @@ export const tangData: { nodes: Node[], links: Link[] } = {
     "desc": "字摩诘，号摩诘居士，唐代著名诗人、画家，被誉为'诗佛'。",
     "birth": 701,
     "death": 761,
+    "locations": ["长安", "辋川"],
     "works": [
       {
         "title": "相思",
@@ -352,11 +358,12 @@ export const tangData: { nodes: Node[], links: Link[] } = {
   {
     "id": "王昌龄",
     "group": 7,
-    "val": 82,
+    "val": 85,
     "color": "#ef4444",
-    "desc": "字少伯，盛唐著名边塞诗人，被誉为'七绝圣手'。",
+    "desc": "字少伯，盛唐著名边塞诗人，被誉为'七绝圣手'、'诗家夫子'。",
     "birth": 698,
     "death": 757,
+    "locations": ["长安", "龙标", "边塞"],
     "works": [
       {
         "title": "出塞",
@@ -367,6 +374,13 @@ export const tangData: { nodes: Node[], links: Link[] } = {
           "边塞",
           "爱国"
         ]
+      },
+      {
+        "title": "从军行七首·其四",
+        "type": "七言绝句",
+        "content": "黄沙百战穿金甲，不破楼兰终不还。",
+        "popularity": 930,
+        "tags": ["边塞", "豪壮"]
       }
     ]
   },
@@ -3030,6 +3044,14 @@ export const tangData: { nodes: Node[], links: Link[] } = {
         ]
       }
     ]
+  },
+  {
+    "id": "汪伦",
+    "group": 1,
+    "val": 40,
+    "color": "#fbbf24",
+    "desc": "唐代泾县名士，李白之友。因李白一首《赠汪伦》而名传千古。",
+    "locations": ["泾县", "桃花潭"]
   }
 ],
   links: [
@@ -3037,19 +3059,22 @@ export const tangData: { nodes: Node[], links: Link[] } = {
     "source": "李白",
     "target": "杜甫",
     "value": 9,
-    "type": "好友"
+    "type": "好友",
+    "description": "唐代诗坛的双子星，曾同游梁宋，杜甫多次寄诗李白表达思念与倾慕。"
   },
   {
     "source": "白居易",
     "target": "元稹",
     "value": 9,
-    "type": "好友"
+    "type": "好友",
+    "description": "世称'元白'，共同发起新乐府运动，情谊深厚，诗笺往还终身不绝。"
   },
   {
     "source": "王维",
     "target": "孟浩然",
     "value": 7,
-    "type": "好友"
+    "type": "好友",
+    "description": "山水田园派代表，王维曾引荐孟浩然，两人多次郊游，诗风相近。"
   },
   {
     "source": "李商隐",
@@ -3085,13 +3110,22 @@ export const tangData: { nodes: Node[], links: Link[] } = {
     "source": "李白",
     "target": "王昌龄",
     "value": 6,
-    "type": "赠诗"
+    "type": "赠诗",
+    "description": "王昌龄遭贬谪，李白作《闻王昌龄左迁龙标遥有此寄》表达慰藉。"
+  },
+  {
+    "source": "李白",
+    "target": "汪伦",
+    "value": 5,
+    "type": "赠诗",
+    "description": "桃花潭水深千尺，不及汪伦送我情。"
   },
   {
     "source": "杜甫",
     "target": "李白",
     "value": 8,
-    "type": "赠诗"
+    "type": "赠诗",
+    "description": "杜甫对李白极其推崇，存世诗作中有十余首专门寄赠或怀念李白（如《天末怀李白》）。"
   }
 ]
 };
