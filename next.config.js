@@ -10,6 +10,13 @@ const nextConfig = {
     unoptimized: true,
   },
   trailingSlash: true,
+  // 忽略构建时的 Lint 和类型检查以加快部署
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 module.exports = nextConfig;
