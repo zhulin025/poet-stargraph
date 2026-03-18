@@ -386,9 +386,10 @@ const Stargraph: React.FC<StargraphProps> = ({
         linkWidth={(link: any) => {
           if (highlightNodes.size > 0 && !highlightLinks.has(link)) return 0.2;
           const isDay = viewMode === 'day';
-          // Slightly increased from 0.6/0.7 to 1.2/1.5 for better export visibility
-          const baseWidth = link.type === '同时代' ? (isDay ? 1.2 : 1.5) : (isDay ? 1.5 : 2.5);
-          return isMobile ? baseWidth * 0.7 : baseWidth;
+          // Desktop: 0.4/0.5 (contemporary), 1.0/1.8 (others)
+          // Mobile: roughly revert to previous thicker style (base * 1.5)
+          const baseWidth = link.type === '同时代' ? (isDay ? 0.4 : 0.5) : (isDay ? 1.0 : 1.8);
+          return isMobile ? baseWidth * 2.5 : baseWidth;
         }}
         linkColor={(link: any) => {
           const isHighlighted = highlightLinks.has(link);

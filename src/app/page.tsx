@@ -45,28 +45,13 @@ export default function Home() {
   type DynastyData = { nodes: Node[], links: Link[] };
   const [currentData, setCurrentData] = useState<DynastyData>(tangData);
 
-  // Dynamic import for non-default dynasties to reduce initial bundle (~700KB saved)
-  useEffect(() => {
-    let cancelled = false;
-    if (dynasty === 'tang') {
-      setCurrentData(tangData);
-      return;
-    }
-    const loaders: Record<string, () => Promise<{ [key: string]: DynastyData }>> = {
-      song: () => import('@/data/song'),
-      yuan: () => import('@/data/yuan'),
-      ming: () => import('@/data/ming'),
-      qing: () => import('@/data/qing'),
-    };
-    loaders[dynasty]().then(mod => {
-      if (!cancelled) {
-        const key = `${dynasty}Data`;
-        setCurrentData((mod as any)[key]);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [dynasty]);
+  // Moved below resetView definition to fix lint error
 
+
+  // Moved up to fix use-before-declaration lint error
+  const resetView = useCallback(() => {
+    setFlipTrigger(prev => prev + 1);
+  }, []);
 
   const handleSearch = useCallback((q: string) => {
     setSearchQuery(q);
@@ -139,9 +124,29 @@ export default function Home() {
       .filter(Boolean) as any[];
   }, [selectedNode, currentData]);
 
-  const resetView = useCallback(() => {
-    setFlipTrigger(prev => prev + 1);
-  }, []);
+  // Dynamic import for non-default dynasties (Moved here to fix lint error)
+  useEffect(() => {
+    let cancelled = false;
+    if (dynasty === 'tang') {
+      setCurrentData(tangData);
+      return;
+    }
+    const loaders: Record<string, () => Promise<{ [key: string]: DynastyData }>> = {
+      song: () => import('@/data/song'),
+      yuan: () => import('@/data/yuan'),
+      ming: () => import('@/data/ming'),
+      qing: () => import('@/data/qing'),
+    };
+    loaders[dynasty]().then(mod => {
+      if (!cancelled) {
+        const key = `${dynasty}Data`;
+        setCurrentData((mod as any)[key]);
+        // Auto-reset view perspective when dynasty changes
+        resetView();
+      }
+    });
+    return () => { cancelled = true; };
+  }, [dynasty, resetView]);
 
   const handleExportPoemCard = useCallback(() => {
     if (!selectedWork || !selectedNode) return;
@@ -273,7 +278,7 @@ export default function Home() {
   }, [selectedWork]);
 
   return (
-    <main className={`relative w-screen h-screen overflow-hidden font-sans selection:bg-dopa-pink/30 transition-colors duration-700 ${viewMode === 'day' ? 'bg-[#F1F5F9]' : 'bg-[#0B0B1E]'}`}>
+    <main className={`relative w-screen h-screen overflow-hidden font-sans selection:bg-dopa-pink/30 transition-colors duration-700 ${viewMode === 'day' ? 'bg-[#FFFFFF]' : 'bg-[#0B0B1E]'}`}>
       {/* 3D Engine Layer - Fixed Fullscreen */}
       <div className="fixed inset-0 z-0">
         <Stargraph
@@ -466,7 +471,7 @@ export default function Home() {
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
                 className={`w-4/5 max-w-sm h-full p-6 flex flex-col border-l-[4px] border-clay-dark ${
-                  viewMode === 'night' ? 'bg-[#0B0B1E] text-white' : 'bg-dopa-bg'
+                  viewMode === 'night' ? 'bg-[#0B0B1E] text-white' : 'bg-white'
                 }`}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -518,10 +523,10 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.9, x: 20 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
               exit={{ opacity: 0, scale: 0.9, x: 20 }}
-              className="fixed right-6 lg:right-12 top-24 z-50 w-[90vw] sm:w-80 lg:w-96 clay-card p-0 bg-white/95 pointer-events-auto shadow-[4px_4px_0_#1E1B4B] border-[2px] border-clay-dark max-h-[calc(100vh-180px)] flex flex-col"
+              className="fixed right-6 lg:right-12 top-24 z-50 w-[90vw] sm:w-80 lg:w-96 clay-card p-0 bg-white pointer-events-auto shadow-[4px_4px_0_#1E1B4B] border-[2px] border-clay-dark max-h-[calc(100vh-180px)] flex flex-col overflow-hidden"
             >
-              {/* Fixed Header with Close Button */}
-              <div className="sticky top-0 right-0 p-4 bg-white/90 backdrop-blur-md z-20 border-b border-slate-100 flex justify-end">
+              {/* Fixed Header with Close Button - Seamless Integration (Solid color to avoid transparency layering) */}
+              <div className="sticky top-0 right-0 p-4 bg-white z-20 flex justify-end">
                 <button 
                   onClick={() => setSelectedNode(null)}
                   className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full border-[2px] border-clay-dark transition-colors group"
