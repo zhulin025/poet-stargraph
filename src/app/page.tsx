@@ -4,11 +4,8 @@ import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic';
 import Sidebar from '@/components/ui/Sidebar';
 import Legend from '@/components/ui/Legend';
-import { songData } from '@/data/song';
 import { tangData } from '@/data/tang';
-import { yuanData } from '@/data/yuan';
-import { mingData } from '@/data/ming';
-import { qingData } from '@/data/qing';
+import type { Node, Link } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cpu, Binary, Sparkles, X, Star, Minimize, Camera } from 'lucide-react';
 
@@ -33,7 +30,10 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [viewMode, setViewMode] = useState<'day' | 'night'>('night');
+  const [showContemporary, setShowContemporary] = useState(true);
   const poemCardRef = useRef<HTMLDivElement>(null);
+  const poemContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const checkScreen = () => setIsLargeScreen(window.innerWidth >= 1024);
@@ -42,15 +42,29 @@ export default function Home() {
     return () => window.removeEventListener('resize', checkScreen);
   }, []);
 
-  const currentData = useMemo(() => {
-    switch(dynasty) {
-      case 'tang': return tangData;
-      case 'song': return songData;
-      case 'yuan': return yuanData;
-      case 'ming': return mingData;
-      case 'qing': return qingData;
-      default: return tangData;
+  type DynastyData = { nodes: Node[], links: Link[] };
+  const [currentData, setCurrentData] = useState<DynastyData>(tangData);
+
+  // Dynamic import for non-default dynasties to reduce initial bundle (~700KB saved)
+  useEffect(() => {
+    let cancelled = false;
+    if (dynasty === 'tang') {
+      setCurrentData(tangData);
+      return;
     }
+    const loaders: Record<string, () => Promise<{ [key: string]: DynastyData }>> = {
+      song: () => import('@/data/song'),
+      yuan: () => import('@/data/yuan'),
+      ming: () => import('@/data/ming'),
+      qing: () => import('@/data/qing'),
+    };
+    loaders[dynasty]().then(mod => {
+      if (!cancelled) {
+        const key = `${dynasty}Data`;
+        setCurrentData((mod as any)[key]);
+      }
+    });
+    return () => { cancelled = true; };
   }, [dynasty]);
 
 
@@ -164,17 +178,34 @@ export default function Home() {
     
     ctx.font = '900 24px "Inter", sans-serif';
     ctx.fillStyle = '#64748b';
-    ctx.fillText(`${selectedNode.id} · 经典传世作品`, cardWidth / 2, 170);
+    ctx.fillText(`${selectedNode.id} · 经典传世作品`, cardWidth / 2, 175);
+
+    // 2.5 Border/Frame
+    ctx.strokeStyle = '#1E1B4B';
+    ctx.lineWidth = 40;
+    ctx.strokeRect(20, 20, cardWidth - 40, cardHeight - 40);
+    
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(60, 60, cardWidth - 120, cardHeight - 120);
 
     // 3. Vertical Text Content (The core)
     ctx.fillStyle = '#1E1B4B';
-    ctx.font = 'bold 42px "Noto Serif SC", serif'; // Fallback to serif
-    const content = selectedWork.content.split('。').filter(Boolean).map((s: string) => s + '。');
+    
+    // Dynamic Font Size logic
+    const contentText = selectedWork.content;
+    let fontSize = 42;
+    if (contentText.length > 50) fontSize = 36;
+    if (contentText.length > 100) fontSize = 28;
+    if (contentText.length > 200) fontSize = 22;
+    
+    ctx.font = `bold ${fontSize}px "Noto Serif SC", serif`;
+    const content = selectedWork.content.split(/[。！？]/).filter(Boolean).map((s: string) => s + '。');
     
     const startX = cardWidth - 150;
-    const startY = 250;
-    const columnGap = 80;
-    const charGap = 50;
+    const startY = 220;
+    const columnGap = fontSize * 1.8;
+    const charGap = fontSize * 1.2;
     
     content.forEach((sentence: string, colIdx: number) => {
       const x = startX - (colIdx * columnGap);
@@ -215,7 +246,7 @@ export default function Home() {
 
     ctx.fillStyle = '#1E1B4B';
     ctx.globalAlpha = 0.5;
-    ctx.fillText(watermarkText, cardWidth - 80, cardHeight - 80);
+    ctx.fillText(watermarkText, cardWidth - 80, cardHeight - 40);
 
     // Export
     const link = document.createElement('a');
@@ -230,11 +261,22 @@ export default function Home() {
     return () => { delete (window as any).exportPoemCard; };
   }, [handleExportPoemCard]);
 
+  // Auto-scroll poem content to the right (start) when a new work is selected
+  useEffect(() => {
+    if (selectedWork && poemContentRef.current) {
+        // Since it's vertical-rl, the start is at the right. 
+        // In most browsers for vertical-rl, scrollLeft 0 is the start (right).
+        // If the browser sets scrollLeft 0 at the left, we need to scroll to max.
+        const el = poemContentRef.current;
+        el.scrollLeft = el.scrollWidth;
+    }
+  }, [selectedWork]);
+
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-dopa-bg font-sans selection:bg-dopa-pink/30">
+    <main className={`relative w-screen h-screen overflow-hidden font-sans selection:bg-dopa-pink/30 transition-colors duration-700 ${viewMode === 'day' ? 'bg-[#F1F5F9]' : 'bg-[#0B0B1E]'}`}>
       {/* 3D Engine Layer - Fixed Fullscreen */}
       <div className="fixed inset-0 z-0">
-        <Stargraph 
+        <Stargraph
           data={currentData}
           isRotating={isRotating}
           onNodeClick={setSelectedNode}
@@ -243,6 +285,8 @@ export default function Home() {
           selectedNodeId={selectedNode?.id}
           triggerExport={exportTrigger}
           onExportFinish={() => setExportTrigger(0)}
+          viewMode={viewMode}
+          showContemporary={showContemporary}
         />
       </div>
 
@@ -265,7 +309,28 @@ export default function Home() {
               <h1 className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4 leading-tight">
                 <div className="flex items-center gap-3">
                   <span className="text-lg sm:text-2xl font-[900] tracking-tighter text-clay-dark truncate">诗外星辰</span>
-                  <span className="bg-dopa-green text-white text-[8px] sm:text-[10px] px-2 py-0.5 rounded-lg border-[2px] border-clay-dark shadow-[1.5px_1.5px_0_#1E1B4B] whitespace-nowrap">V2.0 简体</span>
+                  {/* Version Badge - Hidden on very small mobile to make room for toggle */}
+                  <span className="hidden sm:block bg-dopa-green text-white text-[8px] sm:text-[10px] px-2 py-0.5 rounded-lg border-[2px] border-clay-dark shadow-[1.5px_1.5px_0_#1E1B4B] whitespace-nowrap">V4.0 简体</span>
+                  
+                  {/* Theme Toggle for Mobile - Replaces version badge on small screens */}
+                  <button 
+                    onClick={() => setViewMode(viewMode === 'day' ? 'night' : 'day')}
+                    className={`sm:hidden flex items-center gap-1.5 px-2 h-8 rounded-lg border-[2px] border-clay-dark shadow-[1.5px_1.5px_0_#1E1B4B] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all ${
+                      viewMode === 'day' ? 'bg-dopa-yellow text-clay-dark' : 'bg-clay-dark text-white'
+                    }`}
+                  >
+                    {viewMode === 'day' ? (
+                      <>
+                        <Sparkles size={12} className="text-dopa-pink" />
+                        <span className="text-[10px] font-black">昼</span>
+                      </>
+                    ) : (
+                      <>
+                        <Star size={12} className="text-dopa-yellow" fill="currentColor" />
+                        <span className="text-[10px] font-black">夜</span>
+                      </>
+                    )}
+                  </button>
                 </div>
                 <span className="hidden lg:block text-[11px] sm:text-[13px] font-black text-slate-400 uppercase tracking-widest">
                   —— 探索诗词背后的社交宇宙
@@ -276,20 +341,35 @@ export default function Home() {
 
           <div className="flex items-center gap-4">
             <div className="hidden lg:flex items-center gap-8 text-[11px] font-black tracking-[0.1em] uppercase">
-              <div className="flex items-center gap-3 px-4 py-2 bg-dopa-yellow rounded-xl border-[2px] border-clay-dark shadow-[3px_3px_0_#1E1B4B]">
-                <Sparkles size={14} className="animate-dopa-bounce text-dopa-pink" />
-                <span className="text-clay-dark">系统在线</span>
-              </div>
+              <button 
+                onClick={() => setViewMode(viewMode === 'day' ? 'night' : 'day')}
+                className={`flex items-center gap-3 px-4 py-2 rounded-xl border-[2px] border-clay-dark shadow-[3px_3px_0_#1E1B4B] transition-all active:shadow-none active:translate-x-0.5 active:translate-y-0.5 ${
+                  viewMode === 'day' ? 'bg-dopa-yellow text-clay-dark' : 'bg-clay-dark text-white'
+                }`}
+              >
+                {viewMode === 'day' ? (
+                  <>
+                    <Sparkles size={14} className="animate-dopa-bounce text-dopa-pink" />
+                    <span>昼际模式</span>
+                  </>
+                ) : (
+                  <>
+                    <Star size={14} className="text-dopa-yellow animate-pulse" fill="currentColor" />
+                    <span>宵际模式</span>
+                  </>
+                )}
+              </button>
               <div className="flex items-center gap-2 text-dopa-pink">
                 <Binary size={16} />
                 <span>{
-                  dynasty === 'song' ? 'DS-大宋核心' : 
-                  dynasty === 'tang' ? 'ST-盛唐核心' : 
+                  dynasty === 'song' ? 'DS-大宋核心' :
+                  dynasty === 'tang' ? 'ST-盛唐核心' :
                   dynasty === 'yuan' ? 'DY-大元核心' :
                   dynasty === 'ming' ? 'DM-大明核心' : 'DQ-大清核心'
                 }</span>
               </div>
             </div>
+            {/* Desktop toggle hidden as per request */}
 
             <button 
               onClick={() => setMobileMenuOpen(true)}
@@ -327,6 +407,7 @@ export default function Home() {
                   onExport={() => setExportTrigger(prev => prev + 1)}
                   isFullScreen={isFullScreen}
                   onToggleFullScreen={() => setIsFullScreen(!isFullScreen)}
+                  viewMode={viewMode}
                 />
               </motion.div>
             )}
@@ -376,15 +457,17 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] bg-clay-dark/60 backdrop-blur-md flex justify-end pointer-events-auto"
+              className="fixed inset-0 z-[100] bg-clay-dark/80 lg:bg-clay-dark/60 lg:backdrop-blur-md flex justify-end pointer-events-auto"
               onClick={() => setMobileMenuOpen(false)}
             >
-              <motion.div 
+              <motion.div
                 initial={{ x: "100%" }}
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="w-4/5 max-w-sm h-full bg-dopa-bg p-6 flex flex-col border-l-[4px] border-clay-dark"
+                className={`w-4/5 max-w-sm h-full p-6 flex flex-col border-l-[4px] border-clay-dark ${
+                  viewMode === 'night' ? 'bg-[#0B0B1E] text-white' : 'bg-dopa-bg'
+                }`}
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex justify-between items-center mb-8">
@@ -392,7 +475,7 @@ export default function Home() {
                     <div className="w-10 h-10 rounded-xl bg-dopa-pink border-[2px] border-clay-dark flex items-center justify-center shadow-[3px_3px_0_#1E1B4B]">
                       <Cpu size={20} className="text-white" />
                     </div>
-                    <span className="text-xl font-[900] text-clay-dark tracking-tighter">控制台</span>
+                    <span className={`text-xl font-[900] tracking-tighter ${viewMode === 'night' ? 'text-white' : 'text-clay-dark'}`}>控制台</span>
                   </div>
                   <button onClick={() => setMobileMenuOpen(false)} className="mobile-menu-btn !w-10 !h-10">
                     <X size={20} />
@@ -400,7 +483,7 @@ export default function Home() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide">
-                  <Sidebar 
+                  <Sidebar
                     currentDynasty={dynasty}
                     onDynastyChange={(d) => { setDynasty(d); setMobileMenuOpen(false); }}
                     onSearch={handleSearch}
@@ -409,8 +492,20 @@ export default function Home() {
                     onFlip={() => { resetView(); setMobileMenuOpen(false); }}
                     onExport={() => { setExportTrigger(prev => prev + 1); setMobileMenuOpen(false); }}
                     isFullScreen={isFullScreen}
-                    onToggleFullScreen={() => { setIsFullScreen(!isFullScreen); setMobileMenuOpen(false); }}
+                    viewMode={viewMode}
                   />
+                  <label className={`flex items-center gap-3 mt-4 px-4 py-3 rounded-xl border-[2px] border-clay-dark cursor-pointer select-none ${
+                    viewMode === 'night' ? 'bg-white/10 text-white' : 'bg-white text-clay-dark'
+                  }`}>
+                    <input
+                      type="checkbox"
+                      checked={showContemporary}
+                      onChange={() => setShowContemporary(v => !v)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-8 h-4 rounded-full border-[2px] border-clay-dark bg-slate-200 peer-checked:bg-dopa-blue transition-colors relative shrink-0 after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:w-2.5 after:h-2.5 after:rounded-full after:bg-white after:border after:border-clay-dark after:transition-transform peer-checked:after:translate-x-3.5" />
+                    <span className="text-xs font-black">显示同时代连线</span>
+                  </label>
                 </div>
               </motion.div>
             </motion.div>
@@ -423,17 +518,20 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.9, x: 20 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
               exit={{ opacity: 0, scale: 0.9, x: 20 }}
-              className="fixed right-6 lg:right-12 top-24 z-50 w-[90vw] sm:w-80 lg:w-96 clay-card p-4 sm:p-6 bg-white/95 pointer-events-auto shadow-[4px_4px_0_#1E1B4B] border-[2px] border-clay-dark max-h-[calc(100vh-180px)] overflow-y-auto scrollbar-thin overflow-x-hidden"
+              className="fixed right-6 lg:right-12 top-24 z-50 w-[90vw] sm:w-80 lg:w-96 clay-card p-0 bg-white/95 pointer-events-auto shadow-[4px_4px_0_#1E1B4B] border-[2px] border-clay-dark max-h-[calc(100vh-180px)] flex flex-col"
             >
-              {/* Close Button */}
-              <button 
-                onClick={() => setSelectedNode(null)}
-                className="absolute top-4 right-4 p-2 bg-slate-50 hover:bg-slate-100 rounded-full border-[2px] border-clay-dark transition-colors z-20 group"
-              >
-                <X size={16} className="text-clay-dark group-hover:rotate-90 transition-transform" />
-              </button>
+              {/* Fixed Header with Close Button */}
+              <div className="sticky top-0 right-0 p-4 bg-white/90 backdrop-blur-md z-20 border-b border-slate-100 flex justify-end">
+                <button 
+                  onClick={() => setSelectedNode(null)}
+                  className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full border-[2px] border-clay-dark transition-colors group"
+                >
+                  <X size={16} className="text-clay-dark group-hover:rotate-90 transition-transform" />
+                </button>
+              </div>
 
-              <div className="relative z-10 pt-2">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 scrollbar-thin pt-0">
+                <div className="relative z-10">
                 <div className="flex items-center gap-4 mb-4">
                   <div 
                     className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl border-[2px] border-clay-dark flex items-center justify-center text-xl sm:text-3xl font-[900] shadow-[2.5px_2.5px_0_#1E1B4B]"
@@ -464,14 +562,17 @@ export default function Home() {
                 </div>
 
                 {/* 社交圈 - 深度连接 (Moved above works) */}
-                {socialConnections.length > 0 && (
+                {socialConnections.length > 0 && (() => {
+                  const realConns = socialConnections.filter((c: any) => !c.types.every((t: string) => t === '同时代'));
+                  const contemporaryConns = socialConnections.filter((c: any) => c.types.every((t: string) => t === '同时代'));
+                  return (
                   <div className="mb-6 pt-4 border-t-2 border-slate-100/50">
                     <div className="text-[8px] font-black text-dopa-blue uppercase tracking-widest mb-3 flex items-center gap-2">
                        <Sparkles size={12} className="text-dopa-blue animate-pulse" />
                        <span>社交名士圈</span>
                     </div>
                     <div className="flex flex-col gap-2.5">
-                      {socialConnections.map((conn, i) => (
+                      {realConns.map((conn: any, i: number) => (
                         <div 
                           key={i} 
                           className="group cursor-pointer" 
@@ -508,9 +609,15 @@ export default function Home() {
                            </div>
                         </div>
                       ))}
+                      {contemporaryConns.length > 0 && (
+                        <div className="p-2.5 rounded-xl border-[2px] border-slate-100 bg-slate-50/50 text-[11px] font-bold text-slate-500">
+                          与{contemporaryConns[0].node.id}等 <span className="font-black text-dopa-blue">{contemporaryConns.length}</span> 位诗人生卒年有交集
+                        </div>
+                      )}
                     </div>
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* 时空同台 - 自动识别 shared locations */}
                 {spatiotemporalOverlaps.length > 0 && (
@@ -588,6 +695,7 @@ export default function Home() {
                     <div className="text-lg font-[900] text-clay-dark">#{selectedNode.group}</div>
                   </div>
                 </div>
+                </div>
               </div>
             </motion.div>
           )}
@@ -600,7 +708,7 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-clay-dark/40 backdrop-blur-md pointer-events-auto"
+              className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-clay-dark/70 lg:bg-clay-dark/40 lg:backdrop-blur-md pointer-events-auto"
               onClick={() => setSelectedWork(null)}
             >
               <motion.div
@@ -644,7 +752,10 @@ export default function Home() {
                 </div>
 
                 {/* Modal Content - Vertical Typography */}
-                <div className="flex-1 overflow-x-auto overflow-y-hidden p-8 sm:p-12 flex bg-[#fdfcf8] pattern-dots scrollbar-thin overflow-x-auto">
+                <div 
+                  ref={poemContentRef}
+                  className="flex-1 overflow-x-auto overflow-y-hidden p-8 sm:p-12 flex bg-[#fdfcf8] pattern-dots scrollbar-thin"
+                >
                   <div className="classical-vertical h-full mx-auto text-2xl sm:text-4xl font-bold text-clay-dark leading-[2] tracking-[0.2em] whitespace-pre-wrap py-2 pr-4 pl-12 min-w-max border-r-[2px] border-slate-100">
                     {selectedWork.content.replace(/([，。！？])/g, '$1\n')}
                   </div>
@@ -666,9 +777,9 @@ export default function Home() {
           )}
         </AnimatePresence>
 
-        <div className="fixed bottom-3 right-4 z-[100] text-[7px] sm:text-[9px] text-clay-dark font-[900] uppercase tracking-[0.2em] text-right leading-relaxed pointer-events-none opacity-40">
+        <div className="fixed bottom-3 right-4 z-[100] text-[7px] sm:text-[9px] text-white font-[900] uppercase tracking-[0.2em] text-right leading-relaxed pointer-events-none opacity-40">
           <div className="flex items-center justify-end gap-2 drop-shadow-sm">
-            <span className="bg-clay-dark/5 px-2 py-0.5 rounded-md border border-clay-dark/10">LaoA's AI Lab // 诗外星辰项目</span>
+            <span>LaoA's AI Lab // 诗外星辰项目</span>
           </div>
         </div>
       </div>

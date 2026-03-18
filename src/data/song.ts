@@ -2018,70 +2018,4377 @@ export const songData: { nodes: Node[], links: Link[] } = {
   }
 ],
   links: [
-    { "source": "陆游", "target": "辛弃疾", "value": 7, "type": "好友", "description": "南宋抗金名将及诗人，志同道合的好友。" },
-    { "source": "陆游", "target": "范成大", "value": 9, "type": "好友", "description": "四川同僚及好友，并称'中兴四大诗人'。" },
-  {
-    "source": "苏轼",
-    "target": "苏洵",
-    "value": 10,
-    "type": "父子"
-  },
-  {
-    "source": "苏轼",
-    "target": "苏辙",
-    "value": 10,
-    "type": "亲属",
-    "description": "手足情深，苏轼多首千古名篇（如《水调歌头》）均是为其弟苏辙所作。"
-  },
-  {
-    "source": "苏轼",
-    "target": "黄庭坚",
-    "value": 8,
-    "type": "师徒",
-    "description": "黄庭坚为'苏门四学士'之首，两人亦师亦友，共同开创了宋代文学的新风气。"
-  },
-  {
-    "source": "苏轼",
-    "target": "秦观",
-    "value": 7,
-    "type": "师生"
-  },
-  {
-    "source": "苏轼",
-    "target": "晁补之",
-    "value": 6,
-    "type": "师生"
-  },
-  {
-    "source": "苏轼",
-    "target": "张耒",
-    "value": 6,
-    "type": "师生"
-  },
-  {
-    "source": "辛弃疾",
-    "target": "苏轼",
-    "value": 8,
-    "type": "合称",
-    "description": "虽然生活年代不同，但两人同为豪放派词论的巅峰，世并称'苏辛'。"
-  },
-  {
-    "source": "王安石",
-    "target": "欧阳修",
-    "value": 7,
-    "type": "同门"
-  },
-  {
-    "source": "杨万里",
-    "target": "范成大",
-    "value": 7,
-    "type": "合称"
-  },
-  {
-    "source": "姜夔",
-    "target": "周密",
-    "value": 6,
-    "type": "好友"
-  }
-]
-};
+    {
+      "source": "陆游",
+      "target": "辛弃疾",
+      "value": 7,
+      "type": "好友",
+      "description": "南宋抗金名将及诗人，志同道合的好友。"
+    },
+    {
+      "source": "陆游",
+      "target": "范成大",
+      "value": 9,
+      "type": "好友",
+      "description": "四川同僚及好友，并称'中兴四大诗人'。"
+    },
+    {
+      "source": "苏轼",
+      "target": "苏洵",
+      "value": 10,
+      "type": "父子"
+    },
+    {
+      "source": "苏轼",
+      "target": "苏辙",
+      "value": 10,
+      "type": "亲属",
+      "description": "手足情深，苏轼多首千古名篇（如《水调歌头》）均是为其弟苏辙所作。"
+    },
+    {
+      "source": "苏轼",
+      "target": "黄庭坚",
+      "value": 8,
+      "type": "师徒",
+      "description": "黄庭坚为'苏门四学士'之首，两人亦师亦友，共同开创了宋代文学的新风气。"
+    },
+    {
+      "source": "苏轼",
+      "target": "秦观",
+      "value": 7,
+      "type": "师生"
+    },
+    {
+      "source": "苏轼",
+      "target": "晁补之",
+      "value": 6,
+      "type": "师生"
+    },
+    {
+      "source": "苏轼",
+      "target": "张耒",
+      "value": 6,
+      "type": "师生"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "苏轼",
+      "value": 8,
+      "type": "合称",
+      "description": "虽然生活年代不同，但两人同为豪放派词论的巅峰，世并称'苏辛'。"
+    },
+    {
+      "source": "王安石",
+      "target": "欧阳修",
+      "value": 7,
+      "type": "同门"
+    },
+    {
+      "source": "杨万里",
+      "target": "范成大",
+      "value": 7,
+      "type": "合称"
+    },
+    {
+      "source": "姜夔",
+      "target": "周密",
+      "value": 6,
+      "type": "好友"
+    },
+    {
+      "source": "苏轼",
+      "target": "李清照",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "欧阳修",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "王安石",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "柳永",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "朱淑真",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "梅尧臣",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "苏舜钦",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "张先",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "晏殊",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "晏几道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "范仲淹",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "司马光",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "曾巩",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "陈与义",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "李纲",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "张元幹",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "赵佶",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "王雱",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "孔平仲",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "徐积",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "郭祥正",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "唐庚",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "吕本中",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "陈师道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "韩驹",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "潘大临",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "谢逸",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "苏轼",
+      "target": "谢薖",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "李清照",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "杨万里",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "范成大",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "姜夔",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "元好问",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "朱熹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "尤袤",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "张孝祥",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "史达祖",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "吴文英",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "刘过",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "戴复古",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "胡铨",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "张元幹",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "辛弃疾",
+      "target": "吕本中",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "陆游",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "苏辙",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "黄庭坚",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "秦观",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "晁补之",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "张耒",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "杨万里",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "范成大",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "朱淑真",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "晏几道",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "朱熹",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "尤袤",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "张孝祥",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "陈与义",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "李纲",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "胡铨",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "张元幹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "赵佶",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "孔平仲",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "徐积",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "郭祥正",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "唐庚",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "吕本中",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "陈师道",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "韩驹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "潘大临",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "谢逸",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李清照",
+      "target": "谢薖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "杨万里",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "姜夔",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "元好问",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "朱淑真",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "朱熹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "尤袤",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "张孝祥",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "陈与义",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "史达祖",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "吴文英",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "刘过",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "戴复古",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "李纲",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "胡铨",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "张元幹",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "赵佶",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "吕本中",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "陆游",
+      "target": "韩驹",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "柳永",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "苏洵",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "苏辙",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "黄庭坚",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "秦观",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "晁补之",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "张耒",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "梅尧臣",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "苏舜钦",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "张先",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "晏殊",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "晏几道",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "范仲淹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "司马光",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "曾巩",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "王雱",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "孔平仲",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "徐积",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "郭祥正",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "陈师道",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "潘大临",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "林逋",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "种放",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "魏野",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳修",
+      "target": "丁谓",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "柳永",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "苏洵",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "苏辙",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "黄庭坚",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "秦观",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "晁补之",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "张耒",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "朱淑真",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "梅尧臣",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "苏舜钦",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "张先",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "晏殊",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "晏几道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "范仲淹",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "司马光",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "曾巩",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "王雱",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "孔平仲",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "徐积",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "郭祥正",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "唐庚",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "陈师道",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "韩驹",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "潘大临",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "谢逸",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "谢薖",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "林逋",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "王安石",
+      "target": "丁谓",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "苏洵",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "苏辙",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "黄庭坚",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "梅尧臣",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "苏舜钦",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "张先",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "晏殊",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "晏几道",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "范仲淹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "司马光",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "曾巩",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "王雱",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "孔平仲",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "徐积",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "郭祥正",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "林逋",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "种放",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "魏野",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "潘阆",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "王禹偁",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "柳永",
+      "target": "丁谓",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "苏辙",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "黄庭坚",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "秦观",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "晁补之",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "张耒",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "梅尧臣",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "苏舜钦",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "张先",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "晏殊",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "晏几道",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "范仲淹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "司马光",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "曾巩",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "王雱",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "孔平仲",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "徐积",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "郭祥正",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "陈师道",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "潘大临",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "林逋",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "种放",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "魏野",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏洵",
+      "target": "丁谓",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "黄庭坚",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "秦观",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "晁补之",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "张耒",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "朱淑真",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "梅尧臣",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "苏舜钦",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "张先",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "晏殊",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "晏几道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "范仲淹",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "司马光",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "曾巩",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "陈与义",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "李纲",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "胡铨",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "张元幹",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "赵佶",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "王雱",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "孔平仲",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "徐积",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "郭祥正",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "唐庚",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "吕本中",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "陈师道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "韩驹",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "潘大临",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "谢逸",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏辙",
+      "target": "谢薖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "秦观",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "晁补之",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "张耒",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "朱淑真",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "梅尧臣",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "张先",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "晏殊",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "晏几道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "范仲淹",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "司马光",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "曾巩",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "陈与义",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "李纲",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "张元幹",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "赵佶",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "王雱",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "孔平仲",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "徐积",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "郭祥正",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "唐庚",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "吕本中",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "陈师道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "韩驹",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "潘大临",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "谢逸",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "黄庭坚",
+      "target": "谢薖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "晁补之",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "张耒",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "朱淑真",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "梅尧臣",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "张先",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "晏殊",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "晏几道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "司马光",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "曾巩",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "陈与义",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "李纲",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "张元幹",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "赵佶",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "王雱",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "孔平仲",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "徐积",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "郭祥正",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "唐庚",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "吕本中",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "陈师道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "韩驹",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "潘大临",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "谢逸",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "秦观",
+      "target": "谢薖",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "张耒",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "朱淑真",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "梅尧臣",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "张先",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "晏几道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "司马光",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "曾巩",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "陈与义",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "李纲",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "胡铨",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "张元幹",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "赵佶",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "王雱",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "孔平仲",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "徐积",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "郭祥正",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "唐庚",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "吕本中",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "陈师道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "韩驹",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "潘大临",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "谢逸",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晁补之",
+      "target": "谢薖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "朱淑真",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "梅尧臣",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "张先",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "晏几道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "司马光",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "曾巩",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "陈与义",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "李纲",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "胡铨",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "张元幹",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "赵佶",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "王雱",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "孔平仲",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "徐积",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "郭祥正",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "唐庚",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "吕本中",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "陈师道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "韩驹",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "潘大临",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "谢逸",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张耒",
+      "target": "谢薖",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "姜夔",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "元好问",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "朱淑真",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "朱熹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "尤袤",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "张孝祥",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "陈与义",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "史达祖",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "吴文英",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "刘过",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "戴复古",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "李纲",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "胡铨",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "张元幹",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "赵佶",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "吕本中",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "杨万里",
+      "target": "韩驹",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "范成大",
+      "target": "姜夔",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "范成大",
+      "target": "朱淑真",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "范成大",
+      "target": "朱熹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "范成大",
+      "target": "尤袤",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "范成大",
+      "target": "张孝祥",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "范成大",
+      "target": "陈与义",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "范成大",
+      "target": "史达祖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "范成大",
+      "target": "刘过",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "范成大",
+      "target": "戴复古",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "范成大",
+      "target": "李纲",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "范成大",
+      "target": "胡铨",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "范成大",
+      "target": "张元幹",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "范成大",
+      "target": "赵佶",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "范成大",
+      "target": "吕本中",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "范成大",
+      "target": "韩驹",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "周密",
+      "target": "文天祥",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "周密",
+      "target": "元好问",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "周密",
+      "target": "吴文英",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "周密",
+      "target": "张炎",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "周密",
+      "target": "刘辰翁",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "周密",
+      "target": "戴复古",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "周密",
+      "target": "谢枋得",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "周密",
+      "target": "郑思肖",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "姜夔",
+      "target": "元好问",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "姜夔",
+      "target": "朱熹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "姜夔",
+      "target": "尤袤",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "姜夔",
+      "target": "张孝祥",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "姜夔",
+      "target": "史达祖",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "姜夔",
+      "target": "吴文英",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "姜夔",
+      "target": "刘过",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "姜夔",
+      "target": "戴复古",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "姜夔",
+      "target": "胡铨",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "姜夔",
+      "target": "张元幹",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "文天祥",
+      "target": "元好问",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "文天祥",
+      "target": "吴文英",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "文天祥",
+      "target": "张炎",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "文天祥",
+      "target": "刘辰翁",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "文天祥",
+      "target": "戴复古",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "文天祥",
+      "target": "谢枋得",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "文天祥",
+      "target": "郑思肖",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "元好问",
+      "target": "朱熹",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "元好问",
+      "target": "史达祖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "元好问",
+      "target": "吴文英",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "元好问",
+      "target": "张炎",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "元好问",
+      "target": "刘过",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "元好问",
+      "target": "刘辰翁",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "元好问",
+      "target": "戴复古",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "元好问",
+      "target": "谢枋得",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "元好问",
+      "target": "郑思肖",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "晏几道",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "司马光",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "尤袤",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "陈与义",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "李纲",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "胡铨",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "张元幹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "赵佶",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "孔平仲",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "徐积",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "郭祥正",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "唐庚",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "吕本中",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "陈师道",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "韩驹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "潘大临",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "谢逸",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "朱淑真",
+      "target": "谢薖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "苏舜钦",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "张先",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "晏殊",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "晏几道",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "范仲淹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "司马光",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "曾巩",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "王雱",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "孔平仲",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "徐积",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "郭祥正",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "陈师道",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "林逋",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "种放",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "魏野",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "潘阆",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "梅尧臣",
+      "target": "丁谓",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "苏舜钦",
+      "target": "张先",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏舜钦",
+      "target": "晏殊",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏舜钦",
+      "target": "晏几道",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏舜钦",
+      "target": "范仲淹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "苏舜钦",
+      "target": "司马光",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏舜钦",
+      "target": "曾巩",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏舜钦",
+      "target": "徐积",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏舜钦",
+      "target": "郭祥正",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏舜钦",
+      "target": "林逋",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "苏舜钦",
+      "target": "种放",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "苏舜钦",
+      "target": "魏野",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "苏舜钦",
+      "target": "丁谓",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "晏殊",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "晏几道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "范仲淹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "司马光",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "曾巩",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "王雱",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "孔平仲",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "徐积",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "郭祥正",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "唐庚",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "陈师道",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "潘大临",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "谢逸",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "林逋",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "种放",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "魏野",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "潘阆",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "王禹偁",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "张先",
+      "target": "丁谓",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晏殊",
+      "target": "晏几道",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "晏殊",
+      "target": "范仲淹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晏殊",
+      "target": "司马光",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "晏殊",
+      "target": "曾巩",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "晏殊",
+      "target": "王雱",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "晏殊",
+      "target": "孔平仲",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "晏殊",
+      "target": "徐积",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "晏殊",
+      "target": "郭祥正",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "晏殊",
+      "target": "林逋",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "晏殊",
+      "target": "种放",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "晏殊",
+      "target": "魏野",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "晏殊",
+      "target": "潘阆",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "晏殊",
+      "target": "王禹偁",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "晏殊",
+      "target": "丁谓",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "范仲淹",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "司马光",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "曾巩",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "陈与义",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "李纲",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "胡铨",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "张元幹",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "赵佶",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "王雱",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "孔平仲",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "徐积",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "郭祥正",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "唐庚",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "吕本中",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "陈师道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "韩驹",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "潘大临",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "谢逸",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "晏几道",
+      "target": "谢薖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "范仲淹",
+      "target": "司马光",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "范仲淹",
+      "target": "曾巩",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "范仲淹",
+      "target": "王雱",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "范仲淹",
+      "target": "孔平仲",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "范仲淹",
+      "target": "徐积",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "范仲淹",
+      "target": "郭祥正",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "范仲淹",
+      "target": "林逋",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "范仲淹",
+      "target": "种放",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "范仲淹",
+      "target": "魏野",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "范仲淹",
+      "target": "潘阆",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "范仲淹",
+      "target": "王禹偁",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "范仲淹",
+      "target": "丁谓",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "司马光",
+      "target": "曾巩",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "司马光",
+      "target": "王雱",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "司马光",
+      "target": "孔平仲",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "司马光",
+      "target": "徐积",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "司马光",
+      "target": "郭祥正",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "司马光",
+      "target": "唐庚",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "司马光",
+      "target": "陈师道",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "司马光",
+      "target": "韩驹",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "司马光",
+      "target": "潘大临",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "司马光",
+      "target": "谢逸",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "司马光",
+      "target": "谢薖",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "司马光",
+      "target": "林逋",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "司马光",
+      "target": "丁谓",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "曾巩",
+      "target": "王雱",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "曾巩",
+      "target": "孔平仲",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "曾巩",
+      "target": "徐积",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "曾巩",
+      "target": "郭祥正",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "曾巩",
+      "target": "唐庚",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "曾巩",
+      "target": "陈师道",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "曾巩",
+      "target": "潘大临",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "曾巩",
+      "target": "谢逸",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "曾巩",
+      "target": "谢薖",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "曾巩",
+      "target": "林逋",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "曾巩",
+      "target": "丁谓",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "朱熹",
+      "target": "尤袤",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "朱熹",
+      "target": "张孝祥",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "朱熹",
+      "target": "陈与义",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "朱熹",
+      "target": "史达祖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "朱熹",
+      "target": "刘过",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "朱熹",
+      "target": "戴复古",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "朱熹",
+      "target": "李纲",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "朱熹",
+      "target": "胡铨",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "朱熹",
+      "target": "张元幹",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "朱熹",
+      "target": "赵佶",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "朱熹",
+      "target": "吕本中",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "朱熹",
+      "target": "韩驹",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "尤袤",
+      "target": "张孝祥",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "尤袤",
+      "target": "陈与义",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "尤袤",
+      "target": "史达祖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "尤袤",
+      "target": "刘过",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "尤袤",
+      "target": "戴复古",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "尤袤",
+      "target": "李纲",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "尤袤",
+      "target": "胡铨",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "尤袤",
+      "target": "张元幹",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "尤袤",
+      "target": "赵佶",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "尤袤",
+      "target": "吕本中",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "尤袤",
+      "target": "韩驹",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "张孝祥",
+      "target": "陈与义",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "张孝祥",
+      "target": "史达祖",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "张孝祥",
+      "target": "刘过",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "张孝祥",
+      "target": "李纲",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "张孝祥",
+      "target": "胡铨",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "张孝祥",
+      "target": "张元幹",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "张孝祥",
+      "target": "吕本中",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "陈与义",
+      "target": "李纲",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "陈与义",
+      "target": "胡铨",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "陈与义",
+      "target": "张元幹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "陈与义",
+      "target": "赵佶",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "陈与义",
+      "target": "孔平仲",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "陈与义",
+      "target": "徐积",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "陈与义",
+      "target": "郭祥正",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "陈与义",
+      "target": "唐庚",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "陈与义",
+      "target": "吕本中",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "陈与义",
+      "target": "陈师道",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "陈与义",
+      "target": "韩驹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "陈与义",
+      "target": "潘大临",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "陈与义",
+      "target": "谢逸",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "陈与义",
+      "target": "谢薖",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "史达祖",
+      "target": "吴文英",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "史达祖",
+      "target": "刘过",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "史达祖",
+      "target": "戴复古",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "史达祖",
+      "target": "胡铨",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "吴文英",
+      "target": "张炎",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "吴文英",
+      "target": "刘过",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "吴文英",
+      "target": "刘辰翁",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "吴文英",
+      "target": "戴复古",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "吴文英",
+      "target": "谢枋得",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "吴文英",
+      "target": "郑思肖",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "张炎",
+      "target": "刘辰翁",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张炎",
+      "target": "谢枋得",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张炎",
+      "target": "郑思肖",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "刘过",
+      "target": "戴复古",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "刘过",
+      "target": "胡铨",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "刘过",
+      "target": "张元幹",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "刘辰翁",
+      "target": "戴复古",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "刘辰翁",
+      "target": "谢枋得",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "刘辰翁",
+      "target": "郑思肖",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "戴复古",
+      "target": "谢枋得",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "戴复古",
+      "target": "郑思肖",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "戴复古",
+      "target": "胡铨",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "谢枋得",
+      "target": "郑思肖",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "李纲",
+      "target": "胡铨",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "李纲",
+      "target": "张元幹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "李纲",
+      "target": "赵佶",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "李纲",
+      "target": "孔平仲",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李纲",
+      "target": "徐积",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李纲",
+      "target": "郭祥正",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "李纲",
+      "target": "唐庚",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "李纲",
+      "target": "吕本中",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "李纲",
+      "target": "陈师道",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "李纲",
+      "target": "韩驹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "李纲",
+      "target": "潘大临",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李纲",
+      "target": "谢逸",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "李纲",
+      "target": "谢薖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "胡铨",
+      "target": "张元幹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "胡铨",
+      "target": "赵佶",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "胡铨",
+      "target": "孔平仲",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "胡铨",
+      "target": "郭祥正",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "胡铨",
+      "target": "唐庚",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "胡铨",
+      "target": "吕本中",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "胡铨",
+      "target": "韩驹",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "胡铨",
+      "target": "谢逸",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "胡铨",
+      "target": "谢薖",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "张元幹",
+      "target": "赵佶",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张元幹",
+      "target": "孔平仲",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "张元幹",
+      "target": "徐积",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "张元幹",
+      "target": "郭祥正",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "张元幹",
+      "target": "唐庚",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "张元幹",
+      "target": "吕本中",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张元幹",
+      "target": "陈师道",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "张元幹",
+      "target": "韩驹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "张元幹",
+      "target": "潘大临",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "张元幹",
+      "target": "谢逸",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "张元幹",
+      "target": "谢薖",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "赵佶",
+      "target": "孔平仲",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "赵佶",
+      "target": "徐积",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "赵佶",
+      "target": "郭祥正",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "赵佶",
+      "target": "唐庚",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "赵佶",
+      "target": "吕本中",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "赵佶",
+      "target": "陈师道",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "赵佶",
+      "target": "韩驹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "赵佶",
+      "target": "潘大临",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "赵佶",
+      "target": "谢逸",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "赵佶",
+      "target": "谢薖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "李煜",
+      "target": "冯延巳",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李煜",
+      "target": "欧阳炯",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "李煜",
+      "target": "孙光宪",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "李煜",
+      "target": "林逋",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "李煜",
+      "target": "种放",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李煜",
+      "target": "魏野",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "李煜",
+      "target": "潘阆",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李煜",
+      "target": "王禹偁",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "李煜",
+      "target": "丁谓",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "冯延巳",
+      "target": "韦庄",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "冯延巳",
+      "target": "欧阳炯",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "冯延巳",
+      "target": "孙光宪",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "冯延巳",
+      "target": "种放",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "冯延巳",
+      "target": "潘阆",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "冯延巳",
+      "target": "王禹偁",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "韦庄",
+      "target": "欧阳炯",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "韦庄",
+      "target": "孙光宪",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳炯",
+      "target": "孙光宪",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳炯",
+      "target": "种放",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳炯",
+      "target": "魏野",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳炯",
+      "target": "潘阆",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳炯",
+      "target": "王禹偁",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "欧阳炯",
+      "target": "丁谓",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "孙光宪",
+      "target": "种放",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "孙光宪",
+      "target": "魏野",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "孙光宪",
+      "target": "潘阆",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "孙光宪",
+      "target": "王禹偁",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "王雱",
+      "target": "孔平仲",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "王雱",
+      "target": "徐积",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "王雱",
+      "target": "郭祥正",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "王雱",
+      "target": "唐庚",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "王雱",
+      "target": "陈师道",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "王雱",
+      "target": "潘大临",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "王雱",
+      "target": "谢逸",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "孔平仲",
+      "target": "徐积",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "孔平仲",
+      "target": "郭祥正",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "孔平仲",
+      "target": "唐庚",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "孔平仲",
+      "target": "吕本中",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "孔平仲",
+      "target": "陈师道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "孔平仲",
+      "target": "韩驹",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "孔平仲",
+      "target": "潘大临",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "孔平仲",
+      "target": "谢逸",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "孔平仲",
+      "target": "谢薖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "徐积",
+      "target": "郭祥正",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "徐积",
+      "target": "唐庚",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "徐积",
+      "target": "吕本中",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "徐积",
+      "target": "陈师道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "徐积",
+      "target": "韩驹",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "徐积",
+      "target": "潘大临",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "徐积",
+      "target": "谢逸",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "徐积",
+      "target": "谢薖",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "徐积",
+      "target": "丁谓",
+      "value": 1,
+      "type": "同时代"
+    },
+    {
+      "source": "郭祥正",
+      "target": "唐庚",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "郭祥正",
+      "target": "吕本中",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "郭祥正",
+      "target": "陈师道",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "郭祥正",
+      "target": "韩驹",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "郭祥正",
+      "target": "潘大临",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "郭祥正",
+      "target": "谢逸",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "郭祥正",
+      "target": "谢薖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "唐庚",
+      "target": "吕本中",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "唐庚",
+      "target": "陈师道",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "唐庚",
+      "target": "韩驹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "唐庚",
+      "target": "潘大临",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "唐庚",
+      "target": "谢逸",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "唐庚",
+      "target": "谢薖",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "吕本中",
+      "target": "陈师道",
+      "value": 2,
+      "type": "同时代"
+    },
+    {
+      "source": "吕本中",
+      "target": "韩驹",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "吕本中",
+      "target": "潘大临",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "吕本中",
+      "target": "谢逸",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "吕本中",
+      "target": "谢薖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "陈师道",
+      "target": "韩驹",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "陈师道",
+      "target": "潘大临",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "陈师道",
+      "target": "谢逸",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "陈师道",
+      "target": "谢薖",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "韩驹",
+      "target": "潘大临",
+      "value": 3,
+      "type": "同时代"
+    },
+    {
+      "source": "韩驹",
+      "target": "谢逸",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "韩驹",
+      "target": "谢薖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "潘大临",
+      "target": "谢逸",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "潘大临",
+      "target": "谢薖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "谢逸",
+      "target": "谢薖",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "林逋",
+      "target": "种放",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "林逋",
+      "target": "魏野",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "林逋",
+      "target": "潘阆",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "林逋",
+      "target": "王禹偁",
+      "value": 4,
+      "type": "同时代"
+    },
+    {
+      "source": "林逋",
+      "target": "丁谓",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "种放",
+      "target": "魏野",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "种放",
+      "target": "潘阆",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "种放",
+      "target": "王禹偁",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "种放",
+      "target": "丁谓",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "魏野",
+      "target": "潘阆",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "魏野",
+      "target": "王禹偁",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "魏野",
+      "target": "丁谓",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "潘阆",
+      "target": "王禹偁",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "潘阆",
+      "target": "丁谓",
+      "value": 5,
+      "type": "同时代"
+    },
+    {
+      "source": "王禹偁",
+      "target": "丁谓",
+      "value": 4,
+      "type": "同时代"
+    }
+  ]};

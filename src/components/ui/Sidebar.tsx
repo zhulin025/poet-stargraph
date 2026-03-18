@@ -14,6 +14,7 @@ interface SidebarProps {
   onExport: () => void;
   isFullScreen?: boolean;
   onToggleFullScreen?: () => void;
+  viewMode?: 'day' | 'night';
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -25,7 +26,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onFlip,
   onExport,
   isFullScreen,
-  onToggleFullScreen
+  onToggleFullScreen,
+  viewMode = 'night'
 }) => {
   return (
     <motion.div 
@@ -34,7 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       className="flex flex-col gap-4 w-full lg:w-80 z-40 pointer-events-auto h-full"
     >
       {/* 搜索框 */}
-      <div className="clay-panel !p-6 !border-[2px]">
+      <div className={`clay-panel !p-6 !border-[2px] ${viewMode === 'day' ? 'bg-white' : ''}`}>
         <div className="flex items-center gap-2 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-dopa-pink">
           <Search size={16} className="animate-dopa-bounce" />
           <span>文豪搜索</span>
@@ -51,7 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* 朝代切换 */}
-      <div className="clay-panel !p-5 bg-dopa-yellow/5 !border-[2px]">
+      <div className={`clay-panel !p-5 !border-[2px] ${viewMode === 'day' ? 'bg-dopa-yellow/20' : 'bg-dopa-yellow/5'}`}>
         <div className="flex items-center gap-2 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-dopa-green">
           <Sparkles size={16} />
           <span>时空通讯站</span>
@@ -93,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* 控制中心 */}
-      <div className="clay-panel !p-6 !border-[2px]">
+      <div className={`clay-panel !p-6 !border-[2px] ${viewMode === 'day' ? 'bg-white' : ''}`}>
         <div className="flex items-center gap-2 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-dopa-blue">
           <Layers size={16} />
           <span>引擎控制参数</span>
@@ -133,7 +135,9 @@ const Sidebar: React.FC<SidebarProps> = ({
             <button 
               onClick={onToggleFullScreen}
               className={`flex items-center justify-center gap-2 p-3.5 border-[2px] border-clay-dark rounded-xl font-black text-[10px] shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all ${
-                isFullScreen ? 'bg-dopa-blue text-white' : 'bg-white text-clay-dark hover:bg-slate-50'
+                isFullScreen 
+                  ? 'bg-dopa-blue text-white' 
+                  : viewMode === 'day' ? 'bg-white text-clay-dark hover:bg-slate-50' : 'bg-white text-clay-dark hover:bg-slate-50'
               }`}
             >
               {isFullScreen ? <Minimize size={14} /> : <Maximize size={14} />}

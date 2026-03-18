@@ -10,7 +10,7 @@ module.exports = {
         "dopa-yellow": "#FFE800",
         "dopa-green": "#1AD511",
         "dopa-blue": "#4F46E5",
-        "dopa-bg": "#F8F9FF",
+        "dopa-bg": "#0B0B1E",
         "clay-dark": "#1E1B4B",
       },
     },

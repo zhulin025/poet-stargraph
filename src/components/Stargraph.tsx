@@ -15,18 +15,22 @@ interface StargraphProps {
   selectedNodeId?: string;
   onExportFinish?: () => void;
   triggerExport?: number;
+  viewMode?: 'day' | 'night';
+  showContemporary?: boolean;
 }
 
-const Stargraph: React.FC<StargraphProps> = ({ 
-  data, 
-  isRotating, 
-  onNodeHover, 
+const Stargraph: React.FC<StargraphProps> = ({
+  data,
+  isRotating,
+  onNodeHover,
   onNodeClick,
   searchQuery,
   triggerFlip,
   selectedNodeId,
   onExportFinish,
-  triggerExport
+  triggerExport,
+  viewMode = 'night',
+  showContemporary = true
 }) => {
   const fgRef = useRef<ForceGraphMethods>();
   const [highlightNodes, setHighlightNodes] = useState<Set<string>>(new Set());
@@ -34,11 +38,16 @@ const Stargraph: React.FC<StargraphProps> = ({
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
   const [isHovered, setIsHovered] = useState(false);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768);
+  }, []);
 
   // Texture cache to prevent redundant Canvas creation
   const materialCache = useRef<Map<string, THREE.SpriteMaterial>>(new Map());
 
-  // Clear cache when highlight state changes significantly or on unmount
+  // Clear cache when highlight state or viewMode changes
   useEffect(() => {
     return () => {
       materialCache.current.forEach(m => {
@@ -47,56 +56,16 @@ const Stargraph: React.FC<StargraphProps> = ({
       });
       materialCache.current.clear();
     };
-  }, [data]); // Clear cache when data (dynasty) changes
+  }, [data, viewMode]); // Added viewMode to refresh text contrast
 
-  // Compute contemporary links dynamically
-  const augmentedData = useMemo(() => {
-    if (!data || !data.nodes) return { nodes: [], links: [] };
-    
-    const nodes = data.nodes;
-    const initialLinks = data.links || [];
-    const augmentedLinks = [...initialLinks];
-    
-    // Check for contemporary relations (birth/death overlap)
-    // Only perform this if birth/death data exists to avoid unnecessary iterations
-    const hasTimeline = nodes.some(n => n.birth !== undefined && n.death !== undefined);
-    
-    if (hasTimeline) {
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const nodeA = nodes[i];
-          const nodeB = nodes[j];
-          
-          if (nodeA.birth !== undefined && nodeA.death !== undefined && 
-              nodeB.birth !== undefined && nodeB.death !== undefined) {
-            const start = Math.max(nodeA.birth, nodeB.birth);
-            const end = Math.min(nodeA.death, nodeB.death);
-            
-            if (start <= end) {
-              const overlap = end - start;
-              // Check if link already exists (comparing by ID strings)
-              const exists = augmentedLinks.some(l => {
-                const s = typeof l.source === 'string' ? l.source : (l.source as any).id;
-                const t = typeof l.target === 'string' ? l.target : (l.target as any).id;
-                return (s === nodeA.id && t === nodeB.id) || (s === nodeB.id && t === nodeA.id);
-              });
-              
-              if (!exists && overlap >= 5) {
-                augmentedLinks.push({
-                  source: nodeA.id,
-                  target: nodeB.id,
-                  value: Math.min(Math.floor(overlap / 10) + 1, 5),
-                  type: '同时代'
-                });
-              }
-            }
-          }
-        }
-      }
-    }
-    
-    return { nodes, links: augmentedLinks };
-  }, [data]);
+  // Filter links based on showContemporary toggle
+  const graphData = useMemo(() => {
+    const nodes = data.nodes || [];
+    const links = (data.links || []).filter((l: any) =>
+      showContemporary || l.type !== '同时代'
+    );
+    return { nodes, links };
+  }, [data, showContemporary]);
 
   // Update dimensions for full screen
   useEffect(() => {
@@ -133,7 +102,7 @@ const Stargraph: React.FC<StargraphProps> = ({
 
     if (activeId) {
       nodes.add(activeId);
-      augmentedData.links.forEach((link: any) => {
+      graphData.links.forEach((link: any) => {
         const s = typeof link.source === 'string' ? link.source : (link.source as any).id;
         const t = typeof link.target === 'string' ? link.target : (link.target as any).id;
         
@@ -147,63 +116,66 @@ const Stargraph: React.FC<StargraphProps> = ({
 
     setHighlightNodes(nodes);
     setHighlightLinks(links);
-  }, [selectedNodeId, hoveredNodeId, augmentedData]);
+  }, [selectedNodeId, hoveredNodeId, graphData]);
 
+
+  // nodeThreeObject: creates geometry ONCE per node, no highlight dependency
   const nodeThreeObject = useCallback((node: any) => {
     const group = new THREE.Group();
-    // If something is highlighted, check if this node is in the set.
-    // If nothing is highlighted, everything is normal brightness.
-    const isGlobalDimmed = highlightNodes.size > 0;
-    const isNodeHighlighted = highlightNodes.has(node.id);
-    
+    group.userData.nodeId = node.id;
+
     const baseSize = Math.log(node.val + 2) * 2.5;
     const cartoonColor = getCartoonColor(node.color);
-    
-    // Core Sphere
-    const geometry = new THREE.SphereGeometry(baseSize, 32, 32);
+
+    // Core Sphere — mobile uses lower poly count
+    const segments = isMobile ? 12 : 32;
+    const geometry = new THREE.SphereGeometry(baseSize, segments, segments);
     const material = new THREE.MeshToonMaterial({
       color: cartoonColor,
       transparent: true,
-      opacity: isGlobalDimmed ? (isNodeHighlighted ? 1 : 0.1) : 1
+      opacity: 1
     });
+    material.userData.role = 'core';
     const sphere = new THREE.Mesh(geometry, material);
     group.add(sphere);
 
-    // Name Label (Sprite) - Optimized 2x HD Sampling
-    const cacheKey = `${node.id}_${isGlobalDimmed}_${isNodeHighlighted}`;
+    // Name Label (Sprite)
+    const cacheKey = `${node.id}_label`;
     let spriteMaterial = materialCache.current.get(cacheKey);
 
     if (!spriteMaterial) {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d', { alpha: true });
       if (ctx) {
-        // Switching to KaiTi (Chinese Brush style)
-        canvas.width = 512;
-        canvas.height = 128;
-        
-        ctx.font = 'bold 80px "STKaiti", "KaiTi", "楷体", "BiauKai", serif';
+        const scale = isMobile ? 0.5 : 1;
+        canvas.width = 512 * scale;
+        canvas.height = 128 * scale;
+        const fontSize = 80 * scale;
+        const centerX = 256 * scale;
+        const centerY = 64 * scale;
+
+        ctx.font = `bold ${fontSize}px "STKaiti", "KaiTi", "楷体", "BiauKai", serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        
-        // Text Shadow/Stroke for high contrast
-        ctx.strokeStyle = '#1E1B4B';
-        ctx.lineWidth = 14; 
-        ctx.strokeText(node.id, 256, 64);
-        
-        // Main Text
-        ctx.fillStyle = isGlobalDimmed && !isNodeHighlighted ? '#ffffff33' : '#ffffff';
-        ctx.fillText(node.id, 256, 64);
-        
+
+        ctx.strokeStyle = viewMode === 'day' ? '#ffffff' : '#1E1B4B';
+        ctx.lineWidth = 14 * scale;
+        ctx.strokeText(node.id, centerX, centerY);
+
+        ctx.fillStyle = viewMode === 'day' ? '#1E1B4B' : '#ffffff';
+        ctx.fillText(node.id, centerX, centerY);
+
         const texture = new THREE.CanvasTexture(canvas);
         texture.minFilter = THREE.LinearFilter;
         texture.magFilter = THREE.LinearFilter;
-        
-        spriteMaterial = new THREE.SpriteMaterial({ 
+
+        spriteMaterial = new THREE.SpriteMaterial({
           map: texture,
           transparent: true,
-          opacity: isGlobalDimmed ? (isNodeHighlighted ? 1 : 0.2) : 0.9
+          opacity: 0.9
         });
-        
+        spriteMaterial.userData.role = 'label';
+
         materialCache.current.set(cacheKey, spriteMaterial);
       }
     }
@@ -211,32 +183,72 @@ const Stargraph: React.FC<StargraphProps> = ({
     if (spriteMaterial) {
       const sprite = new THREE.Sprite(spriteMaterial);
       sprite.scale.set(baseSize * 4, baseSize, 1);
-      sprite.position.y = baseSize + 5; 
+      sprite.position.y = baseSize + 5;
+      sprite.userData.role = 'label';
       group.add(sprite);
     }
-    
-    if (isNodeHighlighted) {
-      const outlineGeo = new THREE.SphereGeometry(baseSize * 1.1, 32, 32);
-      const outlineMat = new THREE.MeshBasicMaterial({
-        color: 0x1E1B4B,
-        side: THREE.BackSide,
-        transparent: true,
-        opacity: 0.8
-      });
-      group.add(new THREE.Mesh(outlineGeo, outlineMat));
-      
-      const glowGeo = new THREE.SphereGeometry(baseSize * 1.5, 32, 32);
-      const glowMat = new THREE.MeshBasicMaterial({
-        color: cartoonColor,
-        transparent: true,
-        opacity: node.id === (hoveredNodeId || selectedNodeId) ? 0.3 : 0.1,
-        blending: THREE.AdditiveBlending
-      });
-      group.add(new THREE.Mesh(glowGeo, glowMat));
-    }
-    
+
+    // Pre-create outline + glow meshes (hidden by default, toggled by highlight effect)
+    const outlineGeo = new THREE.SphereGeometry(baseSize * 1.1, segments, segments);
+    const outlineMat = new THREE.MeshBasicMaterial({
+      color: 0x1E1B4B,
+      side: THREE.BackSide,
+      transparent: true,
+      opacity: 0
+    });
+    outlineMat.userData.role = 'outline';
+    const outlineMesh = new THREE.Mesh(outlineGeo, outlineMat);
+    outlineMesh.visible = false;
+    outlineMesh.userData.role = 'outline';
+    group.add(outlineMesh);
+
+    const glowGeo = new THREE.SphereGeometry(baseSize * 1.5, segments, segments);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: cartoonColor,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending
+    });
+    glowMat.userData.role = 'glow';
+    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+    glowMesh.visible = false;
+    glowMesh.userData.role = 'glow';
+    group.add(glowMesh);
+
     return group;
-  }, [highlightNodes, getCartoonColor, hoveredNodeId, selectedNodeId]);
+  }, [getCartoonColor, isMobile, viewMode]);
+
+  // Highlight effect: traverse scene and update materials without rebuilding objects
+  useEffect(() => {
+    if (!fgRef.current) return;
+    const scene = fgRef.current.scene();
+    const isGlobalDimmed = highlightNodes.size > 0;
+    const activeId = hoveredNodeId || selectedNodeId || null;
+
+    scene.traverse((obj: any) => {
+      if (!obj.userData?.nodeId) return;
+      const nodeId = obj.userData.nodeId;
+      const isHighlighted = highlightNodes.has(nodeId);
+
+      obj.children.forEach((child: any) => {
+        const mat = child.material;
+        if (!mat) return;
+        const role = mat.userData?.role || child.userData?.role;
+
+        if (role === 'core') {
+          mat.opacity = isGlobalDimmed ? (isHighlighted ? 1 : 0.1) : 1;
+        } else if (role === 'label') {
+          mat.opacity = isGlobalDimmed ? (isHighlighted ? 1 : 0.2) : 0.9;
+        } else if (role === 'outline') {
+          child.visible = isHighlighted;
+          mat.opacity = isHighlighted ? 0.8 : 0;
+        } else if (role === 'glow') {
+          child.visible = isHighlighted;
+          mat.opacity = isHighlighted ? (nodeId === activeId ? 0.3 : 0.1) : 0;
+        }
+      });
+    });
+  }, [highlightNodes, hoveredNodeId, selectedNodeId]);
 
 
   useEffect(() => {
@@ -303,7 +315,7 @@ const Stargraph: React.FC<StargraphProps> = ({
       
       const capture = () => {
         try {
-          const originalCanvas = document.querySelector('canvas');
+          const originalCanvas = fgRef.current?.renderer().domElement as HTMLCanvasElement;
           if (originalCanvas) {
             // Create a temporary canvas for watermarking
             const tempCanvas = document.createElement('canvas');
@@ -366,28 +378,45 @@ const Stargraph: React.FC<StargraphProps> = ({
     >
       <ForceGraph3D
         ref={fgRef}
-        graphData={augmentedData}
+        graphData={graphData}
         width={dimensions.width}
         height={dimensions.height}
         nodeThreeObject={nodeThreeObject}
         nodeLabel="id"
         linkWidth={(link: any) => {
           if (highlightNodes.size > 0 && !highlightLinks.has(link)) return 0.2;
-          return link.type === '同时代' ? 0.5 : 2;
+          const isDay = viewMode === 'day';
+          // Slightly increased from 0.6/0.7 to 1.2/1.5 for better export visibility
+          const baseWidth = link.type === '同时代' ? (isDay ? 1.2 : 1.5) : (isDay ? 1.5 : 2.5);
+          return isMobile ? baseWidth * 0.7 : baseWidth;
         }}
         linkColor={(link: any) => {
           const isHighlighted = highlightLinks.has(link);
           const isGlobalDimmed = highlightNodes.size > 0;
-          if (isGlobalDimmed && !isHighlighted) return '#ffffff11';
-          return link.type === '同时代' ? '#ffffff44' : '#1E1B4B';
+          if (viewMode === 'day') {
+            if (isGlobalDimmed && !isHighlighted) return '#1E1B4B11';
+            return link.type === '同时代' ? '#64748B' : '#0F172A';
+          } else {
+            if (isGlobalDimmed && !isHighlighted) return '#ffffff22';
+            return link.type === '同时代' ? '#ffffff88' : '#4F46E5';
+          }
         }}
         linkDirectionalParticles={(link: any) => {
+          if (isMobile) return 0; // Disable all particles on mobile
           if (highlightNodes.size > 0 && !highlightLinks.has(link)) return 0;
-          return link.type === '同时代' ? 0 : 3;
+          return link.type === '同时代' ? 0 : 4;
         }}
         linkDirectionalParticleSpeed={0.015}
-        linkDirectionalParticleWidth={(link: any) => highlightLinks.has(link) ? 6 : 4}
-        linkDirectionalParticleColor={(link: any) => highlightLinks.has(link) ? '#FFEB3B' : '#FF3366'}
+        linkDirectionalParticleWidth={(link: any) => {
+          const baseWidth = highlightLinks.has(link) ? 7 : 5;
+          return isMobile ? baseWidth * 0.6 : baseWidth;
+        }}
+        linkDirectionalParticleColor={(link: any) => {
+          if (viewMode === 'day') {
+             return highlightLinks.has(link) ? '#FF3366' : '#4F46E5';
+          }
+          return highlightLinks.has(link) ? '#FFE800' : '#FF3366';
+        }}
         backgroundColor="rgba(0,0,0,0)"
         onNodeHover={(node: any) => {
           setHoveredNodeId(node ? node.id : null);
@@ -408,14 +437,17 @@ const Stargraph: React.FC<StargraphProps> = ({
           }
         }}
         onBackgroundClick={(event) => {
-          // Add a small threshold or check if we are actually clicking the background
           onNodeClick(null);
         }}
         enableNodeDrag={false}
         nodeRelSize={10} // Increase invisible picking area
         showNavInfo={false}
         controlType="orbit"
-        rendererConfig={{ preserveDrawingBuffer: true }}
+        rendererConfig={{ 
+          preserveDrawingBuffer: true,
+          antialias: !isMobile,
+          powerPreference: "high-performance"
+        }}
       />
     </div>
   );
