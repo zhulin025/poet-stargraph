@@ -7,7 +7,7 @@ import Legend from '@/components/ui/Legend';
 import { tangData } from '@/data/tang';
 import type { Node, Link } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cpu, Binary, Sparkles, X, Star, Minimize, Camera } from 'lucide-react';
+import { Cpu, Binary, Sparkles, X, Star, Minimize, Camera, Search } from 'lucide-react';
 
 const Stargraph = dynamic(() => import('@/components/Stargraph'), { 
   ssr: false,
@@ -434,25 +434,9 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-          {/* Full Screen Exit Button */}
-          <AnimatePresence>
-            {isFullScreen && (
-              <motion.div 
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 50 }}
-                className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-auto"
-              >
-                <button 
-                  onClick={() => setIsFullScreen(false)}
-                  className="px-6 py-3 bg-white/90 backdrop-blur-md border-[2px] border-clay-dark rounded-2xl flex items-center gap-2 shadow-[4px_4px_0_#1E1B4B] group hover:bg-dopa-pink hover:text-white transition-all font-[900] text-sm uppercase tracking-widest"
-                >
-                  <Minimize size={18} />
-                  <span>退出沉浸全屏</span>
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+
+
+
         </div>
 
         {/* Improved Mobile Sidebar Overlay */}
@@ -497,6 +481,7 @@ export default function Home() {
                     onFlip={() => { resetView(); setMobileMenuOpen(false); }}
                     onExport={() => { setExportTrigger(prev => prev + 1); setMobileMenuOpen(false); }}
                     isFullScreen={isFullScreen}
+                    onToggleFullScreen={() => { setIsFullScreen(!isFullScreen); setMobileMenuOpen(false); }}
                     viewMode={viewMode}
                   />
                   <label className={`flex items-center gap-3 mt-4 px-4 py-3 rounded-xl border-[2px] border-clay-dark cursor-pointer select-none ${
@@ -787,6 +772,63 @@ export default function Home() {
             <span>LaoA's AI Lab // 诗外星辰项目</span>
           </div>
         </div>
+
+        {/* Global Full Screen UI Elements - Placed at the very end for proper layering and centering */}
+        <AnimatePresence>
+          {isFullScreen && (
+            <>
+              {/* Top Unit: Search + Toggle */}
+              <motion.div 
+                initial={{ opacity: 0, y: -50, x: '-50%' }}
+                animate={{ opacity: 1, y: 0, x: '-50%' }}
+                exit={{ opacity: 0, y: -50, x: '-50%' }}
+                className="fixed top-8 left-1/2 z-[100] pointer-events-auto flex items-center gap-2 p-1.5 bg-white/95 backdrop-blur-md border-[2px] border-clay-dark rounded-2xl shadow-[6px_6px_0_#1E1B4B]"
+              >
+                <div className="relative group min-w-[180px]">
+                  <input 
+                    type="text"
+                    placeholder="搜索文豪..."
+                    onChange={(e) => handleSearch(e.target.value)}
+                    value={searchQuery}
+                    className="w-full px-4 py-2 pr-10 text-xs sm:text-sm bg-slate-50 border-[2px] border-clay-dark/10 rounded-xl focus:outline-none focus:border-dopa-pink transition-all font-[900] text-clay-dark placeholder:text-slate-400"
+                  />
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-clay-dark/40 group-focus-within:text-dopa-pink transition-colors" size={14} strokeWidth={2.5} />
+                </div>
+                
+                <div className="w-[2px] h-6 bg-clay-dark/10 mx-1" />
+
+                <button 
+                  onClick={() => setViewMode(viewMode === 'day' ? 'night' : 'day')}
+                  className={`flex items-center justify-center w-9 h-9 rounded-xl border-[2px] border-clay-dark transition-all active:scale-95 ${
+                    viewMode === 'day' ? 'bg-dopa-yellow text-clay-dark' : 'bg-clay-dark text-white'
+                  }`}
+                >
+                  {viewMode === 'day' ? (
+                    <Sparkles size={16} className="animate-dopa-bounce text-dopa-pink" />
+                  ) : (
+                    <Star size={16} className="text-dopa-yellow" fill="currentColor" />
+                  )}
+                </button>
+              </motion.div>
+
+              {/* Bottom Unit: Exit Button */}
+              <motion.div 
+                initial={{ opacity: 0, y: 50, x: '-50%' }}
+                animate={{ opacity: 1, y: 0, x: '-50%' }}
+                exit={{ opacity: 0, y: 50, x: '-50%' }}
+                className="fixed bottom-10 left-1/2 z-[100] pointer-events-auto"
+              >
+                <button 
+                  onClick={() => setIsFullScreen(false)}
+                  className="px-8 py-3 bg-white/95 backdrop-blur-md border-[2px] border-clay-dark rounded-2xl flex items-center gap-3 shadow-[6px_6px_0_#1E1B4B] group hover:bg-clay-dark hover:text-white transition-all font-[900] text-sm uppercase tracking-widest active:translate-x-1 active:translate-y-1 active:shadow-none"
+                >
+                  <Minimize size={18} />
+                  <span>退出沉浸全屏</span>
+                </button>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     </main>
   );
