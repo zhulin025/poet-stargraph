@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, RotateCw, Layers, Globe, Sparkles, Camera, Maximize, Minimize, Settings, Timer, Map } from 'lucide-react';
+import { Search, RotateCw, Layers, Globe, Sparkles, Camera, Maximize, Minimize, Settings, Timer } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface SidebarProps {
@@ -17,9 +17,9 @@ interface SidebarProps {
   viewMode?: 'day' | 'night';
   isTimelineMode?: boolean;
   onToggleTimeline?: () => void;
-  isMapView?: boolean;
-  onToggleMap?: () => void;
   onShowSettings?: () => void;
+  showContemporary?: boolean;
+  onToggleContemporary?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -35,9 +35,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   viewMode = 'night',
   isTimelineMode = false,
   onToggleTimeline,
-  isMapView = false,
-  onToggleMap,
-  onShowSettings
+  onShowSettings,
+  showContemporary = true,
+  onToggleContemporary
 }) => {
   return (
     <motion.div 
@@ -167,24 +167,27 @@ const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button 
-              onClick={onToggleMap}
-              className={`flex items-center justify-center gap-2 p-3.5 border-[2px] border-clay-dark rounded-xl font-black text-[10px] shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all ${
-                isMapView 
-                  ? 'bg-dopa-green text-white' 
-                  : 'bg-white text-clay-dark hover:bg-slate-50'
-              }`}
-            >
-              <Map size={14} className={isMapView ? 'animate-pulse' : ''} />
-              <span>{isMapView ? '大千世界中' : '大千世界'}</span>
-            </button>
-
-            <button 
               onClick={onShowSettings}
               className="flex items-center justify-center gap-2 p-3.5 bg-clay-dark text-white border-[2px] border-clay-dark rounded-xl font-black text-[10px] shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all hover:bg-clay-dark/90 col-span-2"
             >
               <Settings size={14} />
               <span>引擎配置</span>
             </button>
+
+            {onToggleContemporary && (
+              <label className={`flex items-center gap-3 px-3 py-3 rounded-xl border-[2px] border-clay-dark cursor-pointer select-none col-span-2 ${
+                viewMode === 'night' ? 'bg-white/10 text-white' : 'bg-white text-clay-dark'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={showContemporary}
+                  onChange={onToggleContemporary}
+                  className="sr-only peer"
+                />
+                <div className="w-8 h-4 rounded-full border-[2px] border-clay-dark bg-slate-200 peer-checked:bg-dopa-blue transition-colors relative shrink-0 after:content-[''] after:absolute after:top-[1.5px] after:left-[1px] after:w-2.5 after:h-2.5 after:rounded-full after:bg-white after:border after:border-clay-dark after:transition-transform peer-checked:after:translate-x-[18px]" />
+                <span className="text-xs font-black">显示同时代连线</span>
+              </label>
+            )}
           </div>
 
           <div className="pt-3 border-t-[2px] border-slate-100 flex flex-row justify-between items-center gap-3 text-[8px] font-black uppercase tracking-widest text-slate-300">

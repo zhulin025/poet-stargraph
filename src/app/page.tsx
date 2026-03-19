@@ -37,7 +37,6 @@ export default function Home() {
   const [isTimelineMode, setIsTimelineMode] = useState(false);
   const [currentYear, setCurrentYear] = useState(750);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMapView, setIsMapView] = useState(false);
 
   const dynastyYears: Record<string, { start: number, end: number }> = useMemo(() => ({
     tang: { start: 618, end: 907 },
@@ -77,6 +76,7 @@ export default function Home() {
   } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState('');
+  const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
 
   const poemCardRef = useRef<HTMLDivElement>(null);
   const poemContentRef = useRef<HTMLDivElement>(null);
@@ -131,10 +131,14 @@ export default function Home() {
   }, []);
 
   const handleFocus = useCallback((node: any) => {
-    setSearchQuery(node.id);
-    setSelectedNode(node);
+    const targetId = typeof node === 'string' ? node : node.id;
+    setSearchQuery(targetId);
+    
+    // Retrieve full node data (with birth/death ranges) from the dataset
+    const fullNode = currentData.nodes.find((n: any) => n.id === targetId) || node;
+    setSelectedNode(fullNode);
     setMobileMenuOpen(false);
-  }, []);
+  }, [currentData]);
 
   const socialConnections = useMemo(() => {
     if (!selectedNode) return [];
@@ -353,10 +357,11 @@ export default function Home() {
   }, [selectedWork]);
 
   const handleDeepAnalysis = useCallback(async () => {
-    if (!selectedWork || !llmConfig || !llmConfig.apiKey) return;
+    if (!selectedWork) return;
     
     setIsAnalyzing(true);
     setAiAnalysis('');
+    setIsAnalysisModalOpen(true);
     
     try {
       const prompt = `你是一位精通唐宋文学的评论家。请你对以下这首诗进行深度赏析：
@@ -365,20 +370,28 @@ ${selectedWork.content}
 作者：${selectedNode?.id}
 请从情感意境、文学技巧、历史背景三个维度进行分析，言简意赅，富有诗意。`;
 
-      const response = await fetch(`${llmConfig.baseUrl}/chat/completions`, {
+      const response = await fetch('/api/ai-proxy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${llmConfig.apiKey}`
         },
         body: JSON.stringify({
-          model: llmConfig.model,
-          messages: [{ role: 'user', content: prompt }],
-          stream: true
+          baseUrl: llmConfig?.baseUrl,
+          apiKey: llmConfig?.apiKey,
+          model: llmConfig?.model,
+          messages: [{ role: 'user', content: prompt }]
         })
       });
 
-      if (!response.ok) throw new Error('API request failed');
+      if (!response.ok) {
+        const data = await response.json();
+        if (data.error === 'CONFIG_REQUIRED') {
+          setIsAnalysisModalOpen(false);
+          setShowSettings(true);
+          return;
+        }
+        throw new Error(data.error || 'API request failed');
+      }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
@@ -406,11 +419,13 @@ ${selectedWork.content}
       }
     } catch (error) {
       console.error('Analysis failed:', error);
-      setAiAnalysis('抱歉，深度赏析连接失败。请检查您的 API 配置。');
+      if (aiAnalysis === '') {
+        setAiAnalysis('抱歉，深度赏析连接失败。请检查您的 API 配置及网络连通性。');
+      }
     } finally {
       setIsAnalyzing(false);
     }
-  }, [selectedWork, selectedNode, llmConfig]);
+  }, [selectedWork, selectedNode, llmConfig, aiAnalysis]);
 
   return (
     <main className={`relative w-screen h-screen overflow-hidden font-sans selection:bg-dopa-pink/30 transition-colors duration-700 ${viewMode === 'day' ? 'bg-[#FFFFFF]' : 'bg-[#0B0B1E]'}`}>
@@ -419,6 +434,7 @@ ${selectedWork.content}
         <Stargraph
           data={filteredGraphData}
           isRotating={isRotating}
+          onNodeHover={() => {}}
           onNodeClick={setSelectedNode}
           searchQuery={searchQuery}
           triggerFlip={flipTrigger}
@@ -427,7 +443,6 @@ ${selectedWork.content}
           onExportFinish={() => setExportTrigger(0)}
           viewMode={viewMode}
           showContemporary={showContemporary}
-          isMapView={isMapView}
         />
       </div>
 
@@ -550,10 +565,14 @@ ${selectedWork.content}
                   onToggleFullScreen={() => setIsFullScreen(!isFullScreen)}
                   viewMode={viewMode}
                   isTimelineMode={isTimelineMode}
-                  onToggleTimeline={() => setIsTimelineMode(!isTimelineMode)}
-                  isMapView={isMapView}
-                  onToggleMap={() => setIsMapView(!isMapView)}
+                  onToggleTimeline={() => {
+                    const nextMode = !isTimelineMode;
+                    setIsTimelineMode(nextMode);
+                    if (nextMode) setIsPlaying(true);
+                  }}
                   onShowSettings={() => setShowSettings(true)}
+                  showContemporary={showContemporary}
+                  onToggleContemporary={() => setShowContemporary(v => !v)}
                 />
               </motion.div>
             )}
@@ -607,7 +626,7 @@ ${selectedWork.content}
                     </div>
                     <span className={`text-xl font-[900] tracking-tighter ${viewMode === 'night' ? 'text-white' : 'text-clay-dark'}`}>控制台</span>
                   </div>
-                  <button onClick={() => setMobileMenuOpen(false)} className="mobile-menu-btn !w-10 !h-10">
+                  <button onClick={() => setMobileMenuOpen(false)} className="w-10 h-10 rounded-xl border-[2px] border-clay-dark bg-white text-clay-dark flex items-center justify-center shadow-[2px_2px_0_#1E1B4B] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all">
                     <X size={20} />
                   </button>
                 </div>
@@ -625,23 +644,16 @@ ${selectedWork.content}
                     onToggleFullScreen={() => { setIsFullScreen(!isFullScreen); setMobileMenuOpen(false); }}
                     viewMode={viewMode}
                     isTimelineMode={isTimelineMode}
-                    onToggleTimeline={() => setIsTimelineMode(!isTimelineMode)}
-                    isMapView={isMapView}
-                    onToggleMap={() => setIsMapView(!isMapView)}
+                    onToggleTimeline={() => {
+                      const nextMode = !isTimelineMode;
+                      setIsTimelineMode(nextMode);
+                      if (nextMode) setIsPlaying(true);
+                      setMobileMenuOpen(false);
+                    }}
                     onShowSettings={() => setShowSettings(true)}
+                    showContemporary={showContemporary}
+                    onToggleContemporary={() => setShowContemporary(v => !v)}
                   />
-                  <label className={`flex items-center gap-3 mt-4 px-4 py-3 rounded-xl border-[2px] border-clay-dark cursor-pointer select-none ${
-                    viewMode === 'night' ? 'bg-white/10 text-white' : 'bg-white text-clay-dark'
-                  }`}>
-                    <input
-                      type="checkbox"
-                      checked={showContemporary}
-                      onChange={() => setShowContemporary(v => !v)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-8 h-4 rounded-full border-[2px] border-clay-dark bg-slate-200 peer-checked:bg-dopa-blue transition-colors relative shrink-0 after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:w-2.5 after:h-2.5 after:rounded-full after:bg-white after:border after:border-clay-dark after:transition-transform peer-checked:after:translate-x-3.5" />
-                    <span className="text-xs font-black">显示同时代连线</span>
-                  </label>
                 </div>
               </motion.div>
             </motion.div>
@@ -656,8 +668,29 @@ ${selectedWork.content}
               exit={{ opacity: 0, scale: 0.9, x: 20 }}
               className="fixed right-6 lg:right-12 top-24 z-50 w-[90vw] sm:w-80 lg:w-96 clay-card p-0 bg-white pointer-events-auto shadow-[4px_4px_0_#1E1B4B] border-[2px] border-clay-dark max-h-[calc(100vh-180px)] flex flex-col overflow-hidden"
             >
-              {/* Fixed Header with Close Button - Seamless Integration (Solid color to avoid transparency layering) */}
-              <div className="sticky top-0 right-0 p-4 bg-white z-20 flex justify-end">
+              {/* Header with Poet Info and Close Button */}
+              <div className="sticky top-0 p-4 sm:p-6 bg-white z-20 border-b-[2px] border-slate-50 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg border-[2px] border-clay-dark flex items-center justify-center text-lg sm:text-2xl font-[900] shadow-[2px_2px_0_#1E1B4B] shrink-0"
+                    style={{ backgroundColor: selectedNode.color, color: '#fff' }}
+                  >
+                    {selectedNode.id[0]}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-xl sm:text-2xl font-[1000] text-clay-dark leading-tight tracking-tight">{selectedNode.id}</h2>
+                      <span className="px-1.5 py-0.5 bg-dopa-yellow text-[8px] sm:text-[9px] text-clay-dark font-black rounded-md border-2 border-clay-dark shadow-[1.5px_1.5px_0_#1E1B4B] uppercase whitespace-nowrap mt-1">
+                        影响力 {selectedNode.val}
+                      </span>
+                    </div>
+                    {(selectedNode.birth || selectedNode.death) && (
+                      <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                        {selectedNode.birth || '?'}-{selectedNode.death || '?'}
+                      </p>
+                    )}
+                  </div>
+                </div>
                 <button 
                   onClick={() => setSelectedNode(null)}
                   className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full border-[2px] border-clay-dark transition-colors group"
@@ -666,171 +699,135 @@ ${selectedWork.content}
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 scrollbar-thin pt-0">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 scrollbar-thin">
                 <div className="relative z-10">
-                <div className="flex items-center gap-4 mb-4">
-                  <div 
-                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl border-[2px] border-clay-dark flex items-center justify-center text-xl sm:text-3xl font-[900] shadow-[2.5px_2.5px_0_#1E1B4B]"
-                    style={{ backgroundColor: selectedNode.color }}
-                  >
-                    <span className="text-white drop-shadow-[2px_2px_0_rgba(0,0,0,0.3)]">{selectedNode.id[0]}</span>
+                  <div className="bg-slate-50 border-[2px] border-clay-dark p-3 rounded-xl mb-4 shadow-inner relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-dopa-pink" />
+                    <p className="text-[11px] sm:text-[12px] text-clay-dark leading-relaxed font-bold">
+                      {selectedNode.desc || "这位诗人的创作跨越了时代的鸿沟，其作品在中华文化脉络中具有深远的意义。"}
+                    </p>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex flex-col">
-                      <h2 className="text-lg sm:text-2xl font-[900] text-clay-dark tracking-tighter">{selectedNode.id}</h2>
-                      {selectedNode.birth && (
-                        <span className="text-[10px] font-black text-slate-400 mt-0.5">
-                          {selectedNode.birth} - {selectedNode.death || '至今'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-2 px-2 py-0.5 bg-dopa-yellow text-[8px] sm:text-[9px] text-clay-dark font-black rounded-md border-[2px] border-clay-dark shadow-[1.5px_1.5px_0_#1E1B4B] uppercase inline-block">
-                      影响力: {selectedNode.val}
-                    </div>
-                  </div>
-                </div>
 
-                <div className="bg-slate-50 border-[2px] border-clay-dark p-3 rounded-xl mb-4 shadow-inner relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-dopa-pink" />
-                  <p className="text-[11px] sm:text-[12px] text-clay-dark leading-relaxed font-bold">
-                    {selectedNode.desc || "这位诗人的创作跨越了时代的鸿沟，其作品在中华文化脉络中具有深远的意义。"}
-                  </p>
-                </div>
-
-                {/* 社交圈 - 深度连接 (Moved above works) */}
-                {socialConnections.length > 0 && (() => {
-                  const realConns = socialConnections.filter((c: any) => !c.types.every((t: string) => t === '同时代'));
-                  const contemporaryConns = socialConnections.filter((c: any) => c.types.every((t: string) => t === '同时代'));
-                  return (
-                  <div className="mb-6 pt-4 border-t-2 border-slate-100/50">
-                    <div className="text-[8px] font-black text-dopa-blue uppercase tracking-widest mb-3 flex items-center gap-2">
-                       <Sparkles size={12} className="text-dopa-blue animate-pulse" />
-                       <span>社交名士圈</span>
-                    </div>
-                    <div className="flex flex-col gap-2.5">
-                      {realConns.map((conn: any, i: number) => (
-                        <div 
-                          key={i} 
-                          className="group cursor-pointer" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleFocus(conn.node);
-                          }}
-                        >
-                           <div className="flex items-center gap-3 p-2.5 rounded-xl border-[2px] border-slate-100 bg-slate-50/50 hover:border-dopa-blue hover:bg-white transition-all shadow-sm hover:shadow-md active:scale-95 group">
-                              <div className="w-8 h-8 rounded-lg border-[2px] border-clay-dark flex-shrink-0 shadow-[1px_1px_0_#1E1B4B] flex items-center justify-center text-[10px] font-black text-white" style={{ backgroundColor: conn.node.color }}>
-                                {conn.node.id[0]}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-[11px] font-black text-clay-dark group-hover:text-dopa-blue transition-colors">
-                                    {conn.node.id}
-                                  </span>
-                                  {conn.types.map((t: string, ti: number) => (
-                                    <span key={ti} className={`text-[7px] px-1.5 py-0.2 rounded-md border font-black uppercase tracking-tighter ${
-                                      t === '好友' ? 'bg-dopa-blue/10 text-dopa-blue border-dopa-blue/20' :
-                                      t === '师徒' || t === '学生' || t === '老师' ? 'bg-dopa-green/10 text-dopa-green border-dopa-green/20' :
-                                      'bg-dopa-pink/10 text-dopa-pink border-dopa-pink/20'
-                                    }`}>
-                                      {t}
-                                    </span>
-                                  ))}
+                  {/* 社交圈 - 深度连接 (Moved above works) */}
+                  {socialConnections.length > 0 && (() => {
+                    const realConns = socialConnections.filter((c: any) => !c.types.every((t: string) => t === '同时代'));
+                    const contemporaryConns = socialConnections.filter((c: any) => c.types.every((t: string) => t === '同时代'));
+                    return (
+                    <div className="mb-6 pt-4 border-t-2 border-slate-100/50">
+                      <div className="text-[8px] font-black text-dopa-blue uppercase tracking-widest mb-3 flex items-center gap-2">
+                         <Sparkles size={12} className="text-dopa-blue animate-pulse" />
+                         <span>社交名士圈</span>
+                      </div>
+                      <div className="flex flex-col gap-2.5">
+                        {realConns.map((conn: any, i: number) => (
+                          <div 
+                            key={i} 
+                            className="group cursor-pointer" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleFocus(conn.node);
+                            }}
+                          >
+                             <div className="flex items-center gap-3 p-2.5 rounded-xl border-[2px] border-slate-100 bg-slate-50/50 hover:border-dopa-blue hover:bg-white transition-all shadow-sm hover:shadow-md active:scale-95 group">
+                                <div className="w-8 h-8 rounded-lg border-[2px] border-clay-dark flex-shrink-0 shadow-[1px_1px_0_#1E1B4B] flex items-center justify-center text-[10px] font-black text-white" style={{ backgroundColor: conn.node.color }}>
+                                  {conn.node.id[0]}
                                 </div>
-                                {conn.descriptions.length > 0 && (
-                                  <p className="text-[9px] text-slate-400 line-clamp-1 mt-0.5 font-bold group-hover:text-slate-500">
-                                    {conn.descriptions[0]}
-                                  </p>
-                                )}
-                              </div>
-                           </div>
-                        </div>
-                      ))}
-                      {contemporaryConns.length > 0 && (
-                        <div className="p-2.5 rounded-xl border-[2px] border-slate-100 bg-slate-50/50 text-[11px] font-bold text-slate-500">
-                          与{contemporaryConns[0].node.id}等 <span className="font-black text-dopa-blue">{contemporaryConns.length}</span> 位诗人生卒年有交集
-                        </div>
-                      )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[11px] font-black text-clay-dark group-hover:text-dopa-blue transition-colors">
+                                      {conn.node.id}
+                                    </span>
+                                    {conn.types.map((t: string, ti: number) => (
+                                      <span key={ti} className={`text-[7px] px-1.5 py-0.2 rounded-md border font-black uppercase tracking-tighter ${
+                                        t === '好友' ? 'bg-dopa-blue/10 text-dopa-blue border-dopa-blue/20' :
+                                        t === '师徒' || t === '学生' || t === '老师' ? 'bg-dopa-green/10 text-dopa-green border-dopa-green/20' :
+                                        'bg-dopa-pink/10 text-dopa-pink border-dopa-pink/20'
+                                      }`}>
+                                        {t}
+                                      </span>
+                                    ))}
+                                  </div>
+                                  {conn.descriptions.length > 0 && (
+                                    <p className="text-[9px] text-slate-400 line-clamp-1 mt-0.5 font-bold group-hover:text-slate-500">
+                                      {conn.descriptions[0]}
+                                    </p>
+                                  )}
+                                </div>
+                             </div>
+                          </div>
+                        ))}
+                        {contemporaryConns.length > 0 && (
+                          <div className="p-2.5 rounded-xl border-[2px] border-slate-100 bg-slate-50/50 text-[11px] font-bold text-slate-500">
+                            与{contemporaryConns[0].node.id}等 <span className="font-black text-dopa-blue">{contemporaryConns.length}</span> 位诗人生卒年有交集
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  );
-                })()}
+                    );
+                  })()}
 
-                {/* 时空同台 - 自动识别 shared locations */}
-                {spatiotemporalOverlaps.length > 0 && (
-                  <div className="mb-6 pt-4 border-t-2 border-slate-100/50">
-                    <div className="text-[8px] font-black text-dopa-green uppercase tracking-widest mb-3 flex items-center gap-2">
-                       <X size={12} className="text-dopa-green animate-bounce" />
-                       <span>时空交集点</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {spatiotemporalOverlaps.slice(0, 3).map((overlap, i) => (
-                        <div 
-                          key={i} 
-                          onClick={() => handleFocus(overlap.node)}
-                          className="px-2 py-1.5 bg-dopa-green/5 border-[2px] border-clay-dark rounded-lg cursor-pointer hover:bg-dopa-green/10 transition-colors group flex items-center gap-2"
-                        >
-                          <span className="text-[9px] font-black text-clay-dark">
-                            在 <span className="text-dopa-green">{overlap.locations[0]}</span> 偶遇 <span className="text-dopa-blue">{overlap.node.id}</span>
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Classic Works Section (Now below social) */}
-                {selectedNode.works && selectedNode.works.length > 0 && (
-                  <div className="mb-4">
-                    <div className="text-[8px] font-black text-dopa-pink uppercase tracking-widest mb-2 flex items-center gap-2">
-                      <Star size={10} className="text-dopa-yellow" fill="currentColor" />
-                      <span>经典传世作品</span>
-                    </div>
-                    <div className="space-y-2">
-                      {selectedNode.works.map((work: any, idx: number) => (
-                        <div 
-                          key={idx} 
-                          onClick={() => setSelectedWork(work)}
-                          className="p-2 bg-white border-[2px] border-clay-dark rounded-lg shadow-[2px_2px_0_#1E1B4B] hover:translate-x-1 transition-transform cursor-pointer group"
-                        >
-                          <div className="text-[11px] font-[900] text-clay-dark flex justify-between items-center">
-                            <span className="flex items-center gap-1">
-                              《{work.title}》
-                              {work.isGift && (
-                                <span 
-                                  className="text-[7px] bg-dopa-pink text-white px-1 rounded-sm cursor-help flex items-center gap-0.5"
-                                  onClick={(e) => {
-                                    if (work.recipientId) {
-                                      e.stopPropagation();
-                                      const rNode = currentData.nodes.find(n => n.id === work.recipientId);
-                                      if (rNode) handleFocus(rNode);
-                                    }
-                                  }}
-                                >
-                                  赠 {work.recipientId}
-                                </span>
-                              )}
+                  {/* 时空同台 - 自动识别 shared locations */}
+                  {spatiotemporalOverlaps.length > 0 && (
+                    <div className="mb-6 pt-4 border-t-2 border-slate-100/50">
+                      <div className="text-[8px] font-black text-dopa-green uppercase tracking-widest mb-3 flex items-center gap-2">
+                         <X size={12} className="text-dopa-green animate-bounce" />
+                         <span>时空交集点</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {spatiotemporalOverlaps.slice(0, 3).map((overlap, i) => (
+                          <div 
+                            key={i} 
+                            onClick={() => handleFocus(overlap.node)}
+                            className="px-2 py-1.5 bg-dopa-green/5 border-[2px] border-clay-dark rounded-lg cursor-pointer hover:bg-dopa-green/10 transition-colors group flex items-center gap-2"
+                          >
+                            <span className="text-[9px] font-black text-clay-dark">
+                              在 <span className="text-dopa-green">{overlap.locations[0]}</span> 偶遇 <span className="text-dopa-blue">{overlap.node.id}</span>
                             </span>
-                            <span className="text-[8px] text-dopa-pink opacity-0 group-hover:opacity-100 transition-opacity font-black">点读全文</span>
                           </div>
-                          <div className="text-[9px] text-slate-500 line-clamp-3 mt-0.5 font-medium italic">
-                            {work.content}
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Classic Works Section (Now below social) */}
+                  {selectedNode.works && selectedNode.works.length > 0 && (
+                    <div className="mb-4">
+                      <div className="text-[8px] font-black text-dopa-pink uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <Star size={10} className="text-dopa-yellow" fill="currentColor" />
+                        <span>经典传世作品</span>
+                      </div>
+                      <div className="space-y-2">
+                        {selectedNode.works.map((work: any, idx: number) => (
+                          <div 
+                            key={idx} 
+                            onClick={() => setSelectedWork(work)}
+                            className="p-2 bg-white border-[2px] border-clay-dark rounded-lg shadow-[2px_2px_0_#1E1B4B] hover:translate-x-1 transition-transform cursor-pointer group"
+                          >
+                            <div className="text-[11px] font-[900] text-clay-dark flex justify-between items-center">
+                              <span className="flex items-center gap-1">
+                                《{work.title}》
+                              </span>
+                              <ChevronRight size={12} className="text-slate-300 group-hover:text-dopa-pink group-hover:translate-x-0.5 transition-all" />
+                            </div>
+                            <div className="text-[8px] text-slate-400 mt-1 line-clamp-1 font-bold group-hover:text-slate-500 transition-colors">
+                              {work.content}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3 pb-2">
+                    <div className="bg-dopa-pink/5 border-[2px] border-clay-dark p-2 rounded-xl shadow-[2px_2px_0_#1E1B4B]">
+                      <div className="text-[7px] text-dopa-pink font-black uppercase tracking-widest mb-0.5">强度</div>
+                      <div className="text-lg font-[900] text-clay-dark">+{selectedNode.val}</div>
+                    </div>
+                    <div className="bg-dopa-green/5 border-[2px] border-clay-dark p-2 rounded-xl shadow-[2px_2px_0_#1E1B4B]">
+                      <div className="text-[7px] text-dopa-green font-black uppercase tracking-widest mb-0.5">集群</div>
+                      <div className="text-lg font-[900] text-clay-dark">#{selectedNode.group}</div>
                     </div>
                   </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3 pb-2">
-                  <div className="bg-dopa-pink/5 border-[2px] border-clay-dark p-2 rounded-xl shadow-[2px_2px_0_#1E1B4B]">
-                    <div className="text-[7px] text-dopa-pink font-black uppercase tracking-widest mb-0.5">强度</div>
-                    <div className="text-lg font-[900] text-clay-dark">+{selectedNode.val}</div>
-                  </div>
-                  <div className="bg-dopa-green/5 border-[2px] border-clay-dark p-2 rounded-xl shadow-[2px_2px_0_#1E1B4B]">
-                    <div className="text-[7px] text-dopa-green font-black uppercase tracking-widest mb-0.5">集群</div>
-                    <div className="text-lg font-[900] text-clay-dark">#{selectedNode.group}</div>
-                  </div>
-                </div>
                 </div>
               </div>
             </motion.div>
@@ -890,62 +887,35 @@ ${selectedWork.content}
                 {/* Modal Content - Vertical Typography */}
                 <div 
                   ref={poemContentRef}
-                  className="flex-1 overflow-x-auto overflow-y-hidden p-8 sm:p-12 flex bg-[#fdfcf8] pattern-dots scrollbar-thin"
+                  className="flex-1 overflow-x-auto overflow-y-hidden p-5 sm:p-12 flex bg-[#fdfcf8] pattern-dots scrollbar-thin"
                 >
-                  <div className="classical-vertical h-full mx-auto text-2xl sm:text-4xl font-bold text-clay-dark leading-[2] tracking-[0.2em] whitespace-pre-wrap py-2 pr-4 pl-12 min-w-max border-r-[2px] border-slate-100">
+                  <div className="classical-vertical h-full mx-auto text-xl sm:text-4xl font-bold text-clay-dark leading-[2] tracking-[0.2em] whitespace-pre-wrap py-2 pr-2 pl-6 sm:pr-4 sm:pl-12 min-w-max border-r-[2px] border-slate-100">
                     {selectedWork.content.replace(/([，。！？])/g, '$1\n')}
                   </div>
                 </div>
 
                 {/* Modal Footer - Appreciation */}
-                <div className="p-6 bg-white border-t-[2px] border-clay-dark flex flex-col gap-4">
-                  <div className="bg-dopa-blue/5 border-[2px] border-clay-dark p-4 rounded-2xl relative">
-                    <div className="absolute -top-3 left-6 px-3 py-0.5 bg-dopa-blue text-[9px] text-white font-black rounded-full border-[2px] border-clay-dark shadow-[1.5px_1.5px_0_#1E1B4B]">
+                <div className="p-4 sm:p-6 bg-white border-t-[2px] border-clay-dark flex flex-col gap-3 sm:gap-4">
+                  <div className="bg-dopa-blue/5 border-[2px] border-clay-dark p-3 sm:p-4 rounded-xl sm:rounded-2xl relative mt-2 sm:mt-0">
+                    <div className="absolute -top-3 left-4 sm:left-6 px-3 py-0.5 bg-dopa-blue text-[9px] text-white font-black rounded-full border-[2px] border-clay-dark shadow-[1.5px_1.5px_0_#1E1B4B]">
                       文豪赏析
                     </div>
-                    <p className="text-sm font-bold text-clay-dark leading-relaxed italic">
+                    <p className="text-xs sm:text-sm font-bold text-clay-dark leading-relaxed italic">
                       这首作品展现了{selectedNode?.id}卓越的艺术成就与深厚的人文底蕴，通过凝练的笔触勾勒出旷达而深邃的意境，是中华诗词宝库中璀璨的明珠。
                     </p>
                   </div>
 
-                  {/* AI Deep Analysis Section */}
-                  {llmConfig?.apiKey && (
-                    <div className="mt-2 text-right">
-                      {!aiAnalysis && !isAnalyzing ? (
-                        <button 
-                          onClick={handleDeepAnalysis}
-                          className="px-4 py-2 bg-clay-dark text-white rounded-xl border-[2px] border-clay-dark shadow-[3px_3px_0_#dopa-pink] hover:translate-y-[-2px] transition-all flex items-center gap-2 ml-auto text-xs font-black"
-                        >
-                          <BrainCircuit size={14} className="animate-pulse" />
-                          <span>AI 深度赏析</span>
-                        </button>
-                      ) : (
-                        <div className="bg-dopa-pink/5 border-[2px] border-dopa-pink/20 p-4 rounded-2xl text-left relative overflow-hidden group">
-                          <div className="absolute top-0 right-0 p-2 opacity-20">
-                             <Sparkles size={40} className="text-dopa-pink animate-spin-slow" />
-                          </div>
-                          <div className="flex items-center gap-2 mb-2 text-[10px] font-black text-dopa-pink uppercase tracking-widest">
-                             <BrainCircuit size={14} className={isAnalyzing ? 'animate-bounce' : ''} />
-                             <span>AI 深度解读 {isAnalyzing && '生成中...'}</span>
-                          </div>
-                          <div className="text-sm font-bold text-clay-dark leading-loose whitespace-pre-wrap">
-                            {aiAnalysis || (isAnalyzing ? '正在穿越时空，寻求文豪的真意...' : '')}
-                          </div>
-                          {!isAnalyzing && aiAnalysis && (
-                             <div className="mt-4 pt-4 border-t border-dopa-pink/10 flex justify-between items-center bg-transparent">
-                                <span className="text-[9px] text-slate-400 font-black italic">由智能引擎生成 · 仅供参考</span>
-                                <button 
-                                  onClick={() => setAiAnalysis('')}
-                                  className="text-[9px] text-dopa-pink font-black hover:underline"
-                                >
-                                  重置赏析
-                                </button>
-                             </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {/* AI Deep Analysis Trigger */}
+                  <div className="mt-1 sm:mt-2 w-full sm:w-auto self-end">
+                    <button 
+                      onClick={handleDeepAnalysis}
+                      disabled={isAnalyzing}
+                      className="w-full sm:w-auto px-4 py-2 sm:py-2 bg-clay-dark text-white rounded-xl border-[2px] border-clay-dark shadow-[3px_3px_0_#dopa-pink] hover:translate-y-[-2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-2 text-xs font-black disabled:opacity-50"
+                    >
+                      <BrainCircuit size={14} className={isAnalyzing ? 'animate-spin' : 'animate-pulse'} />
+                      <span>{isAnalyzing ? '穿越时命中...' : 'AI 深度赏析'}</span>
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             </motion.div>
@@ -1018,74 +988,152 @@ ${selectedWork.content}
 
       {/* Timeline Slider Overlay */}
       <AnimatePresence>
-        {isTimelineMode && !isFullScreen && (
+        {isTimelineMode && (
           <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[150] w-[90vw] max-w-2xl pointer-events-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className={`fixed z-[150] pointer-events-auto transition-all duration-500 ${
+              isLargeScreen 
+              ? "top-1/2 right-6 -translate-y-1/2 w-[85px] h-[75vh]" 
+              : "bottom-8 left-1/2 -translate-x-1/2 w-[90vw] max-w-2xl"
+            }`}
           >
-            <div className="bg-white/95 backdrop-blur-md border-[3px] border-clay-dark p-4 rounded-3xl shadow-[8px_8px_0_#1E1B4B] flex flex-col gap-4">
-              <div className="flex items-center justify-between px-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-dopa-pink border-[2px] border-clay-dark flex items-center justify-center shadow-[3px_3px_0_#1E1B4B]">
-                    <History size={20} className="text-white" />
+            <div className="bg-white/95 backdrop-blur-md border-[3px] border-clay-dark p-3 lg:py-6 lg:px-2 rounded-[1.5rem] lg:rounded-3xl shadow-[4px_4px_0_#1E1B4B] lg:shadow-[8px_8px_0_#1E1B4B] w-full h-full">
+              
+              {/* === MOBILE LAYOUT (Horizontal) === */}
+              <div className="flex lg:hidden flex-col justify-between h-full gap-2">
+                {/* Header Info */}
+                <div className="flex items-center justify-between px-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-dopa-pink border-[2px] border-clay-dark flex items-center justify-center shadow-[3px_3px_0_#1E1B4B] shrink-0">
+                      <History size={20} className="text-white" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-[1000] text-clay-dark tracking-tighter whitespace-nowrap">
+                        公元 <span className="text-dopa-pink font-black">{currentYear}</span> 年
+                      </h4>
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">
+                         {dynasty === 'tang' ? '大唐盛世' : '大宋风华'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-lg font-[1000] text-clay-dark tracking-tighter">
-                      公元 <span className="text-dopa-pink font-black">{currentYear}</span> 年
-                    </h4>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                       {dynasty === 'tang' ? '大唐盛世 · 社交演进' :
-                        dynasty === 'song' ? '大宋风华 · 文脉传承' : '时空回溯中'}
-                    </p>
+
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setIsPlaying(!isPlaying)} className={`w-10 h-10 rounded-full border-[3px] border-clay-dark flex items-center justify-center transition-all active:scale-95 shadow-[4px_4px_0_#1E1B4B] ${isPlaying ? 'bg-dopa-yellow' : 'bg-clay-dark text-white'}`}>
+                      {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} className="ml-0.5" fill="currentColor" />}
+                    </button>
+                    <button onClick={() => setIsTimelineMode(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400">
+                      <X size={20} />
+                    </button>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => setIsPlaying(!isPlaying)}
-                    className={`w-12 h-12 rounded-full border-[3px] border-clay-dark flex items-center justify-center transition-all active:scale-95 shadow-[4px_4px_0_#1E1B4B] ${
-                      isPlaying ? 'bg-dopa-yellow' : 'bg-clay-dark text-white'
-                    }`}
-                  >
-                    {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} className="ml-1" fill="currentColor" />}
-                  </button>
-                  <button 
-                    onClick={() => setIsTimelineMode(false)}
-                    className="p-2 hover:bg-slate-100 rounded-full text-slate-400"
-                  >
-                    <X size={20} />
-                  </button>
+                {/* Slider Area */}
+                <div className="px-2 py-1 flex-1 flex flex-col justify-center">
+                  <div className="w-full flex items-center justify-center">
+                     <input 
+                       type="range" min={dynastyYears[dynasty].start} max={dynastyYears[dynasty].end} 
+                       value={currentYear} onChange={(e) => { setCurrentYear(parseInt(e.target.value)); setIsPlaying(false); }} 
+                       className="w-full h-2.5 bg-slate-100 rounded-full appearance-none cursor-pointer border-[2px] border-clay-dark accent-dopa-pink [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-dopa-pink [&::-webkit-slider-thumb]:border-[2px] [&::-webkit-slider-thumb]:border-clay-dark [&::-webkit-slider-thumb]:shadow-[2px_2px_0_#1E1B4B]" 
+                     />
+                  </div>
+                  
+                  {/* Time markers */}
+                  <div className="flex justify-between mt-3 text-[9.px] font-black text-slate-400 uppercase tracking-tighter w-full">
+                    <span>{dynastyYears[dynasty].start} AD</span>
+                    <div className="flex gap-4">
+                        <span className="text-dopa-pink/40">初现</span>
+                        <span className="text-dopa-pink/60">成长</span>
+                        <span className="text-dopa-pink/80">鼎盛</span>
+                    </div>
+                    <span>{dynastyYears[dynasty].end} AD</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="px-4 py-2">
-                <input 
-                  type="range"
-                  min={dynastyYears[dynasty].start}
-                  max={dynastyYears[dynasty].end}
-                  value={currentYear}
-                  onChange={(e) => {
-                    setCurrentYear(parseInt(e.target.value));
-                    setIsPlaying(false);
-                  }}
-                  className="w-full h-3 bg-slate-100 rounded-full appearance-none cursor-pointer border-[2px] border-clay-dark accent-dopa-pink [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-dopa-pink [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-clay-dark [&::-webkit-slider-thumb]:shadow-[2px_2px_0_#1E1B4B]"
-                />
-                <div className="flex justify-between mt-2 text-[10px] font-black text-slate-400 uppercase tracking-tighter">
-                   <span>{dynastyYears[dynasty].start} AD</span>
-                   <div className="flex gap-4">
-                      <span className="text-dopa-pink/40">初现</span>
-                      <span className="text-dopa-pink/60">成长</span>
-                      <span className="text-dopa-pink/80">鼎盛</span>
-                   </div>
-                   <span>{dynastyYears[dynasty].end} AD</span>
+              {/* === DESKTOP LAYOUT (Vertical) === */}
+              <div className="hidden lg:flex flex-col items-center justify-between h-full w-full">
+                {/* 1. Top Icon */}
+                <div className="w-10 h-10 rounded-xl bg-dopa-pink border-[2px] border-clay-dark flex items-center justify-center shadow-[3px_3px_0_#1E1B4B] shrink-0">
+                  <History size={18} className="text-white" />
+                </div>
+
+                {/* 2. Middle Vertical Slider */}
+                <div className="flex-1 w-full my-4 flex flex-col items-center justify-center relative">
+                  
+                  {/* Start Year directly ABOVE slider */}
+                  <span className="text-[10px] font-black text-slate-400 uppercase mb-2">
+                    {dynastyYears[dynasty].start}
+                  </span>
+
+                  <div className="relative h-full flex justify-center items-center w-full min-h-[38vh]">
+                    
+                    {/* Slider Wrapper */}
+                    <div className="relative w-8 h-full flex items-center justify-center z-20">
+                      <input 
+                        type="range"
+                        min={dynastyYears[dynasty].start}
+                        max={dynastyYears[dynasty].end}
+                        value={currentYear}
+                        onChange={(e) => {
+                          setCurrentYear(parseInt(e.target.value));
+                          setIsPlaying(false);
+                        }}
+                        style={{
+                          width: "38vh",
+                          height: "0.5rem",
+                          transformOrigin: "center center",
+                          transform: "rotate(90deg)"
+                        }}
+                        className="absolute bg-slate-100 rounded-full appearance-none cursor-pointer border-[2px] border-clay-dark accent-dopa-pink [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-dopa-pink [&::-webkit-slider-thumb]:border-[2px] [&::-webkit-slider-thumb]:border-clay-dark [&::-webkit-slider-thumb]:shadow-[2px_2px_0_#1E1B4B]"
+                      />
+                    </div>
+
+                    {/* Right markers (Stages - Top, Center, Bottom) */}
+                    <div className="absolute top-1/2 left-[calc(50%+12px)] transform -translate-y-1/2 flex flex-col justify-between h-[95%] text-[10px] sm:text-[11px] font-[1000] text-dopa-pink pointer-events-none z-10">
+                      <span className="opacity-40 select-none" style={{ writingMode: 'vertical-rl', letterSpacing: '0.1em' }}>初现</span>
+                      <span className="opacity-70 select-none" style={{ writingMode: 'vertical-rl', letterSpacing: '0.1em' }}>成长</span>
+                      <span className="opacity-100 select-none" style={{ writingMode: 'vertical-rl', letterSpacing: '0.1em' }}>鼎盛</span>
+                    </div>
+
+                  </div>
+
+                  {/* End Year directly BELOW slider */}
+                  <span className="text-[10px] font-black text-slate-400 uppercase mt-2">
+                    {dynastyYears[dynasty].end}
+                  </span>
+
+                </div>
+
+                {/* 3. Bottom Controls */}
+                <div className="flex flex-col items-center gap-4 w-full">
+                  <div className="text-center flex flex-col items-center gap-1">
+                    <h4 className="flex flex-col items-center text-sm font-[1000] text-clay-dark tracking-tighter whitespace-nowrap">
+                      <span>公元</span>
+                      <span className="text-dopa-pink font-black text-2xl leading-none mt-1">{currentYear}年</span>
+                    </h4>
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">
+                       {dynasty === 'tang' ? '大唐盛世' : '大宋风华'}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col items-center gap-2 mt-2 w-full">
+                    <button onClick={() => setIsPlaying(!isPlaying)} className={`w-12 h-12 rounded-full border-[3px] border-clay-dark flex items-center justify-center transition-all active:scale-95 shadow-[4px_4px_0_#1E1B4B] ${isPlaying ? 'bg-dopa-yellow' : 'bg-clay-dark text-white'}`}>
+                      {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} className="ml-1" fill="currentColor" />}
+                    </button>
+
+                    <button onClick={() => setIsTimelineMode(false)} className="mt-3 text-slate-400 hover:text-clay-dark p-2 hover:bg-slate-100 rounded-full border-[2px] border-transparent hover:border-clay-dark transition-all">
+                      <X size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
 
       {/* Engine Settings Modal */}
       <AnimatePresence>
@@ -1186,6 +1234,79 @@ ${selectedWork.content}
                         注意：您的秘钥将加密存储在本地浏览器缓存中，不会经过我们的服务器，请放心使用。
                     </p>
                 </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* AI Deep Analysis Result Modal */}
+      <AnimatePresence>
+        {isAnalysisModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-clay-dark/60 backdrop-blur-md pointer-events-auto"
+            onClick={() => !isAnalyzing && setIsAnalysisModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: 50, rotate: -2 }}
+              animate={{ scale: 1, y: 0, rotate: 0 }}
+              exit={{ scale: 0.8, y: 50, opacity: 0 }}
+              className="bg-[#fefaf0] border-[4px] border-clay-dark rounded-[3rem] shadow-[20px_20px_0_#1E1B4B] max-w-lg w-full p-10 relative overflow-hidden flex flex-col gap-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Artistic Background Elements */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-dopa-pink/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-dopa-blue/5 rounded-full -ml-16 -mb-16 blur-3xl" />
+              
+              <div className="flex justify-between items-start relative z-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-dopa-pink border-[3px] border-clay-dark flex items-center justify-center shadow-[4px_4px_0_#1E1B4B]">
+                    <BrainCircuit size={28} className="text-white animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-[1000] text-clay-dark tracking-tighter">AI 深度赏析</h3>
+                    <p className="text-[10px] font-black text-dopa-pink uppercase tracking-widest mt-1">
+                      《{selectedWork?.title}》· {selectedNode?.id}
+                    </p>
+                  </div>
+                </div>
+                {!isAnalyzing && (
+                  <button 
+                    onClick={() => setIsAnalysisModalOpen(false)}
+                    className="p-3 hover:bg-dopa-pink/10 rounded-full border-[3px] border-clay-dark transition-all active:scale-95"
+                  >
+                    <X size={20} />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex-1 overflow-y-auto min-h-[300px] max-h-[60vh] scrollbar-thin relative z-10 pr-6 mr-[-8px]">
+                <div className="text-lg font-bold text-clay-dark leading-relaxed whitespace-pre-wrap font-serif italic text-justify px-2 py-4 decoration-dopa-pink/10 underline-offset-8">
+                  {aiAnalysis || (isAnalyzing ? '正在跨越千年时空，为您呈上文豪的真意...' : '加载失败，请重试。')}
+                </div>
+              </div>
+
+              <div className="pt-6 border-t-[3px] border-clay-dark/10 flex justify-between items-center relative z-10">
+                <div className="flex items-center gap-2 group">
+                   <Sparkles size={16} className="text-dopa-yellow group-hover:rotate-180 transition-transform duration-500" />
+                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic font-serif">
+                     由智能解析引擎驱动
+                   </span>
+                </div>
+                {aiAnalysis && !isAnalyzing && (
+                  <button 
+                    onClick={() => setIsAnalysisModalOpen(false)}
+                    className="px-6 py-2 bg-clay-dark text-white rounded-full font-black text-[10px] uppercase shadow-[4px_4px_0_#dopa-pink] hover:translate-y-[-2px] active:translate-y-[2px] active:shadow-none transition-all"
+                  >
+                    收起画卷
+                  </button>
+                )}
+              </div>
+              
+              {/* Paper Texture Overlay */}
+              <div className="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/paper-fibers.png')]" />
             </motion.div>
           </motion.div>
         )}
