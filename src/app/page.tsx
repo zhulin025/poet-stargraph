@@ -7,7 +7,7 @@ import Legend from '@/components/ui/Legend';
 import { tangData } from '@/data/tang';
 import type { Node, Link } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cpu, Binary, Sparkles, X, Star, Minimize, Camera, Search } from 'lucide-react';
+import { Cpu, Binary, Sparkles, X, Star, Minimize, Camera, Search, Settings, BrainCircuit, Key, Globe, Save, History, Play, Pause, ChevronRight, Timer } from 'lucide-react';
 
 const Stargraph = dynamic(() => import('@/components/Stargraph'), { 
   ssr: false,
@@ -32,8 +32,66 @@ export default function Home() {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [viewMode, setViewMode] = useState<'day' | 'night'>('night');
   const [showContemporary, setShowContemporary] = useState(true);
+  
+  // Timeline States
+  const [isTimelineMode, setIsTimelineMode] = useState(false);
+  const [currentYear, setCurrentYear] = useState(750);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMapView, setIsMapView] = useState(false);
+
+  const dynastyYears: Record<string, { start: number, end: number }> = useMemo(() => ({
+    tang: { start: 618, end: 907 },
+    song: { start: 960, end: 1279 },
+    yuan: { start: 1271, end: 1368 },
+    ming: { start: 1368, end: 1644 },
+    qing: { start: 1644, end: 1912 }
+  }), []);
+
+  useEffect(() => {
+    setCurrentYear(dynastyYears[dynasty].start);
+    setIsPlaying(false);
+  }, [dynasty, dynastyYears]);
+
+  useEffect(() => {
+    let interval: any;
+    if (isPlaying && isTimelineMode) {
+      interval = setInterval(() => {
+        setCurrentYear(prev => {
+          if (prev >= dynastyYears[dynasty].end) {
+            setIsPlaying(false);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 100);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, isTimelineMode, dynasty, dynastyYears]);
+
+  // AI Appreciation States
+  const [showSettings, setShowSettings] = useState(false);
+  const [llmConfig, setLlmConfig] = useState<{
+    apiKey: string;
+    baseUrl: string;
+    model: string;
+  } | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState('');
+
   const poemCardRef = useRef<HTMLDivElement>(null);
   const poemContentRef = useRef<HTMLDivElement>(null);
+
+  // Load Config
+  useEffect(() => {
+    const saved = localStorage.getItem('poet_stargraph_llm_config');
+    if (saved) {
+      try {
+        setLlmConfig(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse LLM config');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const checkScreen = () => setIsLargeScreen(window.innerWidth >= 1024);
@@ -48,7 +106,22 @@ export default function Home() {
   // Moved below resetView definition to fix lint error
 
 
-  // Moved up to fix use-before-declaration lint error
+  // Update currentData filtering for timeline
+  const filteredGraphData = useMemo(() => {
+    if (!isTimelineMode) return currentData;
+    
+    const nodes = currentData.nodes.filter(n => (n.birth || 0) <= currentYear);
+    const nodeIds = new Set(nodes.map(n => n.id));
+    
+    const links = currentData.links.filter(l => {
+      const s = typeof l.source === 'string' ? l.source : (l.source as any).id;
+      const t = typeof l.target === 'string' ? l.target : (l.target as any).id;
+      return nodeIds.has(s) && nodeIds.has(t);
+    });
+    
+    return { nodes, links };
+  }, [currentData, isTimelineMode, currentYear]);
+
   const resetView = useCallback(() => {
     setFlipTrigger(prev => prev + 1);
   }, []);
@@ -263,26 +336,88 @@ export default function Home() {
   // Bind to window for UI button
   useEffect(() => {
     (window as any).exportPoemCard = handleExportPoemCard;
-    return () => { delete (window as any).exportPoemCard; };
+    (window as any).showSettings = () => setShowSettings(true);
+    return () => { 
+      delete (window as any).exportPoemCard;
+      delete (window as any).showSettings;
+    };
   }, [handleExportPoemCard]);
 
   // Auto-scroll poem content to the right (start) when a new work is selected
   useEffect(() => {
     if (selectedWork && poemContentRef.current) {
-        // Since it's vertical-rl, the start is at the right. 
-        // In most browsers for vertical-rl, scrollLeft 0 is the start (right).
-        // If the browser sets scrollLeft 0 at the left, we need to scroll to max.
         const el = poemContentRef.current;
         el.scrollLeft = el.scrollWidth;
+        setAiAnalysis(''); // Reset analysis when new work selected
     }
   }, [selectedWork]);
+
+  const handleDeepAnalysis = useCallback(async () => {
+    if (!selectedWork || !llmConfig || !llmConfig.apiKey) return;
+    
+    setIsAnalyzing(true);
+    setAiAnalysis('');
+    
+    try {
+      const prompt = `你是一位精通唐宋文学的评论家。请你对以下这首诗进行深度赏析：
+《${selectedWork.title}》
+${selectedWork.content}
+作者：${selectedNode?.id}
+请从情感意境、文学技巧、历史背景三个维度进行分析，言简意赅，富有诗意。`;
+
+      const response = await fetch(`${llmConfig.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${llmConfig.apiKey}`
+        },
+        body: JSON.stringify({
+          model: llmConfig.model,
+          messages: [{ role: 'user', content: prompt }],
+          stream: true
+        })
+      });
+
+      if (!response.ok) throw new Error('API request failed');
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const dataStr = line.replace('data: ', '').trim();
+              if (dataStr === '[DONE]') break;
+              try {
+                const data = JSON.parse(dataStr);
+                const content = data.choices[0]?.delta?.content || '';
+                setAiAnalysis(prev => prev + content);
+              } catch (e) {}
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      setAiAnalysis('抱歉，深度赏析连接失败。请检查您的 API 配置。');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [selectedWork, selectedNode, llmConfig]);
 
   return (
     <main className={`relative w-screen h-screen overflow-hidden font-sans selection:bg-dopa-pink/30 transition-colors duration-700 ${viewMode === 'day' ? 'bg-[#FFFFFF]' : 'bg-[#0B0B1E]'}`}>
       {/* 3D Engine Layer - Fixed Fullscreen */}
       <div className="fixed inset-0 z-0">
         <Stargraph
-          data={currentData}
+          data={filteredGraphData}
           isRotating={isRotating}
           onNodeClick={setSelectedNode}
           searchQuery={searchQuery}
@@ -292,6 +427,7 @@ export default function Home() {
           onExportFinish={() => setExportTrigger(0)}
           viewMode={viewMode}
           showContemporary={showContemporary}
+          isMapView={isMapView}
         />
       </div>
 
@@ -413,6 +549,11 @@ export default function Home() {
                   isFullScreen={isFullScreen}
                   onToggleFullScreen={() => setIsFullScreen(!isFullScreen)}
                   viewMode={viewMode}
+                  isTimelineMode={isTimelineMode}
+                  onToggleTimeline={() => setIsTimelineMode(!isTimelineMode)}
+                  isMapView={isMapView}
+                  onToggleMap={() => setIsMapView(!isMapView)}
+                  onShowSettings={() => setShowSettings(true)}
                 />
               </motion.div>
             )}
@@ -483,6 +624,11 @@ export default function Home() {
                     isFullScreen={isFullScreen}
                     onToggleFullScreen={() => { setIsFullScreen(!isFullScreen); setMobileMenuOpen(false); }}
                     viewMode={viewMode}
+                    isTimelineMode={isTimelineMode}
+                    onToggleTimeline={() => setIsTimelineMode(!isTimelineMode)}
+                    isMapView={isMapView}
+                    onToggleMap={() => setIsMapView(!isMapView)}
+                    onShowSettings={() => setShowSettings(true)}
                   />
                   <label className={`flex items-center gap-3 mt-4 px-4 py-3 rounded-xl border-[2px] border-clay-dark cursor-pointer select-none ${
                     viewMode === 'night' ? 'bg-white/10 text-white' : 'bg-white text-clay-dark'
@@ -752,7 +898,7 @@ export default function Home() {
                 </div>
 
                 {/* Modal Footer - Appreciation */}
-                <div className="p-6 bg-white border-t-[2px] border-clay-dark">
+                <div className="p-6 bg-white border-t-[2px] border-clay-dark flex flex-col gap-4">
                   <div className="bg-dopa-blue/5 border-[2px] border-clay-dark p-4 rounded-2xl relative">
                     <div className="absolute -top-3 left-6 px-3 py-0.5 bg-dopa-blue text-[9px] text-white font-black rounded-full border-[2px] border-clay-dark shadow-[1.5px_1.5px_0_#1E1B4B]">
                       文豪赏析
@@ -761,6 +907,45 @@ export default function Home() {
                       这首作品展现了{selectedNode?.id}卓越的艺术成就与深厚的人文底蕴，通过凝练的笔触勾勒出旷达而深邃的意境，是中华诗词宝库中璀璨的明珠。
                     </p>
                   </div>
+
+                  {/* AI Deep Analysis Section */}
+                  {llmConfig?.apiKey && (
+                    <div className="mt-2 text-right">
+                      {!aiAnalysis && !isAnalyzing ? (
+                        <button 
+                          onClick={handleDeepAnalysis}
+                          className="px-4 py-2 bg-clay-dark text-white rounded-xl border-[2px] border-clay-dark shadow-[3px_3px_0_#dopa-pink] hover:translate-y-[-2px] transition-all flex items-center gap-2 ml-auto text-xs font-black"
+                        >
+                          <BrainCircuit size={14} className="animate-pulse" />
+                          <span>AI 深度赏析</span>
+                        </button>
+                      ) : (
+                        <div className="bg-dopa-pink/5 border-[2px] border-dopa-pink/20 p-4 rounded-2xl text-left relative overflow-hidden group">
+                          <div className="absolute top-0 right-0 p-2 opacity-20">
+                             <Sparkles size={40} className="text-dopa-pink animate-spin-slow" />
+                          </div>
+                          <div className="flex items-center gap-2 mb-2 text-[10px] font-black text-dopa-pink uppercase tracking-widest">
+                             <BrainCircuit size={14} className={isAnalyzing ? 'animate-bounce' : ''} />
+                             <span>AI 深度解读 {isAnalyzing && '生成中...'}</span>
+                          </div>
+                          <div className="text-sm font-bold text-clay-dark leading-loose whitespace-pre-wrap">
+                            {aiAnalysis || (isAnalyzing ? '正在穿越时空，寻求文豪的真意...' : '')}
+                          </div>
+                          {!isAnalyzing && aiAnalysis && (
+                             <div className="mt-4 pt-4 border-t border-dopa-pink/10 flex justify-between items-center bg-transparent">
+                                <span className="text-[9px] text-slate-400 font-black italic">由智能引擎生成 · 仅供参考</span>
+                                <button 
+                                  onClick={() => setAiAnalysis('')}
+                                  className="text-[9px] text-dopa-pink font-black hover:underline"
+                                >
+                                  重置赏析
+                                </button>
+                             </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </motion.div>
@@ -830,6 +1015,181 @@ export default function Home() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Timeline Slider Overlay */}
+      <AnimatePresence>
+        {isTimelineMode && !isFullScreen && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[150] w-[90vw] max-w-2xl pointer-events-auto"
+          >
+            <div className="bg-white/95 backdrop-blur-md border-[3px] border-clay-dark p-4 rounded-3xl shadow-[8px_8px_0_#1E1B4B] flex flex-col gap-4">
+              <div className="flex items-center justify-between px-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-dopa-pink border-[2px] border-clay-dark flex items-center justify-center shadow-[3px_3px_0_#1E1B4B]">
+                    <History size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-[1000] text-clay-dark tracking-tighter">
+                      公元 <span className="text-dopa-pink font-black">{currentYear}</span> 年
+                    </h4>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                       {dynasty === 'tang' ? '大唐盛世 · 社交演进' :
+                        dynasty === 'song' ? '大宋风华 · 文脉传承' : '时空回溯中'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setIsPlaying(!isPlaying)}
+                    className={`w-12 h-12 rounded-full border-[3px] border-clay-dark flex items-center justify-center transition-all active:scale-95 shadow-[4px_4px_0_#1E1B4B] ${
+                      isPlaying ? 'bg-dopa-yellow' : 'bg-clay-dark text-white'
+                    }`}
+                  >
+                    {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} className="ml-1" fill="currentColor" />}
+                  </button>
+                  <button 
+                    onClick={() => setIsTimelineMode(false)}
+                    className="p-2 hover:bg-slate-100 rounded-full text-slate-400"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="px-4 py-2">
+                <input 
+                  type="range"
+                  min={dynastyYears[dynasty].start}
+                  max={dynastyYears[dynasty].end}
+                  value={currentYear}
+                  onChange={(e) => {
+                    setCurrentYear(parseInt(e.target.value));
+                    setIsPlaying(false);
+                  }}
+                  className="w-full h-3 bg-slate-100 rounded-full appearance-none cursor-pointer border-[2px] border-clay-dark accent-dopa-pink [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-dopa-pink [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-clay-dark [&::-webkit-slider-thumb]:shadow-[2px_2px_0_#1E1B4B]"
+                />
+                <div className="flex justify-between mt-2 text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                   <span>{dynastyYears[dynasty].start} AD</span>
+                   <div className="flex gap-4">
+                      <span className="text-dopa-pink/40">初现</span>
+                      <span className="text-dopa-pink/60">成长</span>
+                      <span className="text-dopa-pink/80">鼎盛</span>
+                   </div>
+                   <span>{dynastyYears[dynasty].end} AD</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Engine Settings Modal */}
+      <AnimatePresence>
+        {showSettings && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-clay-dark/60 backdrop-blur-md pointer-events-auto"
+            onClick={() => setShowSettings(false)}
+          >
+            <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="bg-white border-[3px] border-clay-dark rounded-[2.5rem] shadow-[12px_12px_0_#1E1B4B] max-w-md w-full p-8 relative overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="absolute -top-12 -right-12 w-32 h-32 bg-dopa-pink/10 rounded-full blur-2xl" />
+                <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-dopa-blue/10 rounded-full blur-2xl" />
+
+                <div className="flex justify-between items-center mb-8 relative z-10">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-clay-dark flex items-center justify-center shadow-[4px_4px_0_#dopa-pink]">
+                            <Settings size={24} className="text-white animate-spin-slow" />
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-[1000] text-clay-dark tracking-tighter">引擎配置</h3>
+                            <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">V5.0 AI 动力赋能</p>
+                        </div>
+                    </div>
+                    <button onClick={() => setShowSettings(false)} className="p-2 hover:bg-slate-100 rounded-full border-2 border-clay-dark transition-colors">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <div className="space-y-6 relative z-10">
+                    <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-xs font-black text-clay-dark uppercase tracking-widest">
+                            <Key size={14} className="text-dopa-pink" />
+                            <span>API 秘钥 (Key)</span>
+                        </label>
+                        <input 
+                            type="password"
+                            placeholder="sk-..."
+                            defaultValue={llmConfig?.apiKey}
+                            id="apiKey"
+                            className="w-full px-4 py-3 rounded-xl border-[2px] border-clay-dark bg-slate-50 focus:bg-white transition-all font-bold text-sm focus:ring-4 focus:ring-dopa-pink/20"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-xs font-black text-clay-dark uppercase tracking-widest">
+                            <Globe size={14} className="text-dopa-blue" />
+                            <span>接口基址 (Base URL)</span>
+                        </label>
+                        <input 
+                            type="text"
+                            placeholder="https://api.openai.com/v1"
+                            defaultValue={llmConfig?.baseUrl || 'https://api.openai.com/v1'}
+                            id="baseUrl"
+                            className="w-full px-4 py-3 rounded-xl border-[2px] border-clay-dark bg-slate-50 focus:bg-white transition-all font-bold text-sm focus:ring-4 focus:ring-dopa-blue/20"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-xs font-black text-clay-dark uppercase tracking-widest">
+                            <BrainCircuit size={14} className="text-dopa-green" />
+                            <span>模型名称 (Model)</span>
+                        </label>
+                        <input 
+                            type="text"
+                            placeholder="gpt-4 / claude-3-opus"
+                            defaultValue={llmConfig?.model || 'gpt-4'}
+                            id="model"
+                            className="w-full px-4 py-3 rounded-xl border-[2px] border-clay-dark bg-slate-50 focus:bg-white transition-all font-bold text-sm focus:ring-4 focus:ring-dopa-green/20"
+                        />
+                    </div>
+
+                    <button 
+                        onClick={() => {
+                            const config = {
+                                apiKey: (document.getElementById('apiKey') as HTMLInputElement).value,
+                                baseUrl: (document.getElementById('baseUrl') as HTMLInputElement).value,
+                                model: (document.getElementById('model') as HTMLInputElement).value,
+                            };
+                            localStorage.setItem('poet_stargraph_llm_config', JSON.stringify(config));
+                            setLlmConfig(config);
+                            setShowSettings(false);
+                        }}
+                        className="w-full py-4 bg-dopa-pink text-white rounded-2xl border-[3px] border-clay-dark shadow-[6px_6px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all font-[1000] text-lg uppercase tracking-widest mt-4 flex items-center justify-center gap-2 group"
+                    >
+                        <Save size={20} className="group-hover:scale-110 transition-transform" />
+                        <span>保存配置</span>
+                    </button>
+                    
+                    <p className="text-[9px] text-center text-slate-400 font-bold px-4 leading-relaxed">
+                        注意：您的秘钥将加密存储在本地浏览器缓存中，不会经过我们的服务器，请放心使用。
+                    </p>
+                </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

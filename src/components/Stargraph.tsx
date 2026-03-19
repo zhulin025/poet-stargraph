@@ -17,6 +17,7 @@ interface StargraphProps {
   triggerExport?: number;
   viewMode?: 'day' | 'night';
   showContemporary?: boolean;
+  isMapView?: boolean;
 }
 
 const Stargraph: React.FC<StargraphProps> = ({
@@ -30,9 +31,35 @@ const Stargraph: React.FC<StargraphProps> = ({
   onExportFinish,
   triggerExport,
   viewMode = 'night',
-  showContemporary = true
+  showContemporary = true,
+  isMapView = false
 }) => {
   const fgRef = useRef<ForceGraphMethods>();
+  
+  // Geographic Mapping Data
+  const cityCoords: Record<string, { x: number, y: number }> = useMemo(() => ({
+    '长安': { x: -20, y: 10 },
+    '西安': { x: -20, y: 10 },
+    '洛阳': { x: 10, y: 15 },
+    '成都': { x: -60, y: -20 },
+    '杭州': { x: 80, y: -10 },
+    '苏州': { x: 75, y: -5 },
+    '越州': { x: 85, y: -15 },
+    '绍兴': { x: 85, y: -15 },
+    '扬州': { x: 70, y: 5 },
+    '金陵': { x: 65, y: 0 },
+    '南京': { x: 65, y: 0 },
+    '襄阳': { x: 15, y: -10 },
+    '江陵': { x: 10, y: -15 },
+    '岳州': { x: 12, y: -25 },
+    '宣州': { x: 55, y: -8 },
+    '润州': { x: 68, y: 2 },
+    '荆州': { x: 8, y: -15 },
+    '庐山': { x: 40, y: -15 },
+    '常州': { x: 72, y: -2 },
+    '湖州': { x: 78, y: -8 },
+  }), []);
+
   const [highlightNodes, setHighlightNodes] = useState<Set<string>>(new Set());
   const [highlightLinks, setHighlightLinks] = useState<Set<any>>(new Set());
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
@@ -217,6 +244,87 @@ const Stargraph: React.FC<StargraphProps> = ({
 
     return group;
   }, [getCartoonColor, isMobile, viewMode]);
+
+  // Handle Map View Transition
+  useEffect(() => {
+    if (!fgRef.current) return;
+    const fg = fgRef.current;
+
+    if (isMapView) {
+      // Disable forces and move to geo positions
+      fg.d3Force('charge', null);
+      fg.d3Force('link', null);
+      fg.d3Force('center', null);
+
+      graphData.nodes.forEach((node: any) => {
+        // Try to find a known location in node's locations array
+        const location = node.locations?.find((loc: string) => cityCoords[loc]);
+        const coords = location ? cityCoords[location] : null;
+        
+        if (coords) {
+          node.fx = coords.x * 5; // Scale for 3D space
+          node.fy = coords.y * 5;
+          node.fz = -50; // On the map plane
+        } else {
+          // Spread unknown locations in a circle around the center
+          const angle = Math.random() * Math.PI * 2;
+          const radius = 300 + Math.random() * 200;
+          node.fx = Math.cos(angle) * radius;
+          node.fy = Math.sin(angle) * radius;
+          node.fz = -100;
+        }
+      });
+      
+      // Move camera to top-down view
+      fg.cameraPosition({ x: 0, y: 0, z: 1200 }, { x: 0, y: 0, z: 0 }, 2000);
+    } else {
+      // Re-enable forces
+      fg.d3Force('link', (window as any).d3?.forceLink().distance(180));
+      fg.d3Force('charge', (window as any).d3?.forceManyBody().strength(-600));
+      
+      graphData.nodes.forEach((node: any) => {
+          node.fx = undefined;
+          node.fy = undefined;
+          node.fz = undefined;
+      });
+      fg.d3ReheatSimulation();
+    }
+  }, [isMapView, graphData, cityCoords]);
+
+  // Add Map Plane to Scene
+  useEffect(() => {
+    if (!fgRef.current) return;
+    const scene = fgRef.current.scene();
+    
+    if (isMapView && !scene.userData.mapAdded) {
+        const geometry = new THREE.PlaneGeometry(2500, 1500);
+        const material = new THREE.MeshBasicMaterial({ 
+            color: viewMode === 'day' ? 0xf1f5f9 : 0x1e1b4b,
+            transparent: true,
+            opacity: 0.3,
+            side: THREE.DoubleSide
+        });
+        const plane = new THREE.Mesh(geometry, material);
+        plane.position.z = -120;
+        plane.userData.role = 'map-plane';
+        scene.add(plane);
+
+        // Add Grid
+        const grid = new THREE.GridHelper(3000, 50, 0x64748b, 0x334155);
+        grid.rotation.x = Math.PI / 2;
+        grid.position.z = -119;
+        grid.userData.role = 'map-grid';
+        scene.add(grid);
+
+        scene.userData.mapAdded = true;
+    } else if (!isMapView && scene.userData.mapAdded) {
+        const toRemove = scene.children.filter((c: any) => 
+            c.userData.role === 'map-plane' || c.userData.role === 'map-grid'
+        );
+        toRemove.forEach((c: any) => scene.remove(c));
+        scene.userData.mapAdded = false;
+    }
+  }, [isMapView, viewMode]);
 
   // Highlight effect: traverse scene and update materials without rebuilding objects
   useEffect(() => {

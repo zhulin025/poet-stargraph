@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, RotateCw, Layers, Globe, Sparkles, Camera, Maximize, Minimize } from 'lucide-react';
+import { Search, RotateCw, Layers, Globe, Sparkles, Camera, Maximize, Minimize, Settings, Timer, Map } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface SidebarProps {
@@ -15,6 +15,11 @@ interface SidebarProps {
   isFullScreen?: boolean;
   onToggleFullScreen?: () => void;
   viewMode?: 'day' | 'night';
+  isTimelineMode?: boolean;
+  onToggleTimeline?: () => void;
+  isMapView?: boolean;
+  onToggleMap?: () => void;
+  onShowSettings?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -27,7 +32,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   onExport,
   isFullScreen,
   onToggleFullScreen,
-  viewMode = 'night'
+  viewMode = 'night',
+  isTimelineMode = false,
+  onToggleTimeline,
+  isMapView = false,
+  onToggleMap,
+  onShowSettings
 }) => {
   return (
     <motion.div 
@@ -137,11 +147,43 @@ const Sidebar: React.FC<SidebarProps> = ({
               className={`flex items-center justify-center gap-2 p-3.5 border-[2px] border-clay-dark rounded-xl font-black text-[10px] shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all ${
                 isFullScreen 
                   ? 'bg-dopa-blue text-white' 
-                  : viewMode === 'day' ? 'bg-white text-clay-dark hover:bg-slate-50' : 'bg-white text-clay-dark hover:bg-slate-50'
+                  : viewMode === 'day' ? 'bg-white text-clay-dark' : 'bg-white text-clay-dark'
               }`}
             >
               {isFullScreen ? <Minimize size={14} /> : <Maximize size={14} />}
-              <span>{isFullScreen ? '退出沉浸' : '沉浸全屏'}</span>
+              <span>{isFullScreen ? '退出沉浸' : '全屏'}</span>
+            </button>
+
+            <button 
+              onClick={onToggleTimeline}
+              className={`flex items-center justify-center gap-2 p-3.5 border-[2px] border-clay-dark rounded-xl font-black text-[10px] shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all ${
+                isTimelineMode 
+                  ? 'bg-dopa-pink text-white' 
+                  : 'bg-white text-clay-dark hover:bg-slate-50'
+              }`}
+            >
+              <Timer size={14} className={isTimelineMode ? 'animate-spin-slow' : ''} />
+              <span>{isTimelineMode ? '时空回溯中' : '时空回溯'}</span>
+            </button>
+
+            <button 
+              onClick={onToggleMap}
+              className={`flex items-center justify-center gap-2 p-3.5 border-[2px] border-clay-dark rounded-xl font-black text-[10px] shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all ${
+                isMapView 
+                  ? 'bg-dopa-green text-white' 
+                  : 'bg-white text-clay-dark hover:bg-slate-50'
+              }`}
+            >
+              <Map size={14} className={isMapView ? 'animate-pulse' : ''} />
+              <span>{isMapView ? '大千世界中' : '大千世界'}</span>
+            </button>
+
+            <button 
+              onClick={onShowSettings}
+              className="flex items-center justify-center gap-2 p-3.5 bg-clay-dark text-white border-[2px] border-clay-dark rounded-xl font-black text-[10px] shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all hover:bg-clay-dark/90 col-span-2"
+            >
+              <Settings size={14} />
+              <span>引擎配置</span>
             </button>
           </div>
 
