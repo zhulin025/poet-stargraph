@@ -81,3 +81,13 @@
 .classical-handwritten {
   font-family: 'ZCOOL XiaoWei', serif;
 }
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+

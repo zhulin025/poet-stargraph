@@ -5,6 +5,13 @@ export const metadata = {
   description: '基于 3D 知识图谱探索历代诗人的社交关系网络与传世作品。',
 }
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+}
+
 export default function RootLayout({
   children,
 }: {

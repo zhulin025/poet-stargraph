@@ -7,7 +7,7 @@ import Legend from '@/components/ui/Legend';
 import { tangData } from '@/data/tang';
 import type { Node, Link } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cpu, Binary, Sparkles, X, Star, Minimize, Camera, Search, Settings, BrainCircuit, Key, Globe, Save, History, Play, Pause, ChevronRight, Timer } from 'lucide-react';
+import { Cpu, Binary, Sparkles, X, Star, Minimize, Camera, Search, Settings, BrainCircuit, Key, Globe, Save, History, Play, Pause, ChevronRight, Timer, PenTool, MessageSquare, Swords, ImagePlus } from 'lucide-react';
 
 const Stargraph = dynamic(() => import('@/components/Stargraph'), { 
   ssr: false,
@@ -73,10 +73,53 @@ export default function Home() {
     apiKey: string;
     baseUrl: string;
     model: string;
+    imageApiKey?: string;
+    imageBaseUrl?: string;
+    imageModel?: string;
   } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState('');
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
+
+  // AI Detail (Expand) States
+  const [isDetailing, setIsDetailing] = useState(false);
+  const [aiDetailContent, setAiDetailContent] = useState('');
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  // AI Imitate Poem (Card) States
+  const [poemTopic, setPoemTopic] = useState('');
+  const [isPoeming, setIsPoeming] = useState(false);
+  const [aiPoemContent, setAiPoemContent] = useState('');
+  const [isPoemInputModalOpen, setIsPoemInputModalOpen] = useState(false);
+  const [isPoemResultModalOpen, setIsPoemResultModalOpen] = useState(false);
+
+  // Global AI Poem States
+  const [isGlobalPoemModalOpen, setIsGlobalPoemModalOpen] = useState(false);
+  const [globalPoemParams, setGlobalPoemParams] = useState({ dynasty: 'tang', emotion: '豪放', topic: '' });
+  const [isGlobalPoeming, setIsGlobalPoeming] = useState(false);
+  const [globalPoemContent, setGlobalPoemContent] = useState('');
+  const [isGlobalPoemResultOpen, setIsGlobalPoemResultOpen] = useState(false);
+
+  // AI Scene Director States
+  const [isSceneGenerating, setIsSceneGenerating] = useState(false);
+  const [sceneImageUrl, setSceneImageUrl] = useState('');
+  const [isSceneModalOpen, setIsSceneModalOpen] = useState(false);
+  const [scenePrompt, setScenePrompt] = useState('');
+
+  // Spatiotemporal Chat States
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [chatParticipantA, setChatParticipantA] = useState('李白');
+  const [chatParticipantB, setChatParticipantB] = useState('杜甫');
+  const [chatTopic, setChatTopic] = useState('');
+  const [aiChatContent, setAiChatContent] = useState('');
+  const [isChatResultOpen, setIsChatResultOpen] = useState(false);
+  const [isChatting, setIsChatting] = useState(false);
+
+  // Poetry Game States
+  const [isGameModalOpen, setIsGameModalOpen] = useState(false);
+  const [gameHistory, setGameHistory] = useState<{isUser: boolean, text: string}[]>([]);
+  const [gameInput, setGameInput] = useState('');
+  const [isGaming, setIsGaming] = useState(false);
 
   const poemCardRef = useRef<HTMLDivElement>(null);
   const poemContentRef = useRef<HTMLDivElement>(null);
@@ -356,25 +399,11 @@ export default function Home() {
     }
   }, [selectedWork]);
 
-  const handleDeepAnalysis = useCallback(async () => {
-    if (!selectedWork) return;
-    
-    setIsAnalyzing(true);
-    setAiAnalysis('');
-    setIsAnalysisModalOpen(true);
-    
+  const streamAiResponse = async (prompt: string, onChunk: (text: string) => void, onError: (msg: string) => void) => {
     try {
-      const prompt = `你是一位精通唐宋文学的评论家。请你对以下这首诗进行深度赏析：
-《${selectedWork.title}》
-${selectedWork.content}
-作者：${selectedNode?.id}
-请从情感意境、文学技巧、历史背景三个维度进行分析，言简意赅，富有诗意。`;
-
       const response = await fetch('/api/ai-proxy', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           baseUrl: llmConfig?.baseUrl,
           apiKey: llmConfig?.apiKey,
@@ -386,8 +415,8 @@ ${selectedWork.content}
       if (!response.ok) {
         const data = await response.json();
         if (data.error === 'CONFIG_REQUIRED') {
-          setIsAnalysisModalOpen(false);
           setShowSettings(true);
+          onError('CONFIG_REQUIRED');
           return;
         }
         throw new Error(data.error || 'API request failed');
@@ -411,7 +440,7 @@ ${selectedWork.content}
               try {
                 const data = JSON.parse(dataStr);
                 const content = data.choices[0]?.delta?.content || '';
-                setAiAnalysis(prev => prev + content);
+                onChunk(content);
               } catch (e) {}
             }
           }
@@ -419,13 +448,188 @@ ${selectedWork.content}
       }
     } catch (error) {
       console.error('Analysis failed:', error);
-      if (aiAnalysis === '') {
-        setAiAnalysis('抱歉，深度赏析连接失败。请检查您的 API 配置及网络连通性。');
-      }
-    } finally {
-      setIsAnalyzing(false);
+      onError('请求失败，请检查 API 配置及网络。');
     }
-  }, [selectedWork, selectedNode, llmConfig, aiAnalysis]);
+  };
+
+  const handleDeepAnalysis = useCallback(async () => {
+    if (!selectedWork) return;
+    if (isAnalyzing) {
+      setIsAnalysisModalOpen(true);
+      return;
+    }
+    setIsAnalyzing(true);
+    setAiAnalysis('');
+    setIsAnalysisModalOpen(true);
+    
+    const prompt = `你是一位精通唐宋文学的评论家。请你对以下这首诗进行深度赏析：\n《${selectedWork.title}》\n${selectedWork.content}\n作者：${selectedNode?.id}\n请从情感意境、文学技巧、历史背景三个维度进行分析，言简意赅，富有诗意。`;
+    
+    let currentAnalysis = '';
+    await streamAiResponse(prompt, (chunk) => {
+      currentAnalysis += chunk;
+      setAiAnalysis(currentAnalysis);
+    }, (err) => {
+      if (err !== 'CONFIG_REQUIRED' && currentAnalysis === '') {
+        setAiAnalysis('抱歉，深度赏析连接失败。请检查您的 API 配置及网络连通性。');
+      } else if (err === 'CONFIG_REQUIRED') {
+        setIsAnalysisModalOpen(false);
+      }
+    });
+    setIsAnalyzing(false);
+  }, [selectedWork, selectedNode, llmConfig]);
+
+  const handleDetailAnalysis = useCallback(async () => {
+    if (!selectedNode) return;
+    if (isDetailing) {
+      setIsDetailModalOpen(true);
+      return;
+    }
+    setIsDetailing(true);
+    setAiDetailContent('');
+    setIsDetailModalOpen(true);
+    
+    const conns = socialConnections.map((c: any) => c.node.id).join('、');
+    const prompt = `你是一位深谙中国古代文学史的学者。请详细介绍诗人【${selectedNode.id}】的生平。特别要注意，请重点讲述他与以下名士的交集与逸事：【${conns || '同时代文人'}】。要求：文辞优美、富有历史画面感、言简意赅（字数控制在500字以内）。`;
+    
+    let currentDetail = '';
+    await streamAiResponse(prompt, (chunk) => {
+      currentDetail += chunk;
+      setAiDetailContent(currentDetail);
+    }, (err) => {
+      if (err !== 'CONFIG_REQUIRED' && currentDetail === '') {
+        setAiDetailContent('网络连接失败...请检查配置。');
+      } else if (err === 'CONFIG_REQUIRED') {
+        setIsDetailModalOpen(false);
+      }
+    });
+    setIsDetailing(false);
+  }, [selectedNode, socialConnections, llmConfig]);
+
+  const handleImitatePoem = useCallback(async () => {
+    if (!selectedNode || !poemTopic) return;
+    setIsPoemInputModalOpen(false);
+    setIsPoeming(true);
+    setAiPoemContent('');
+    setIsPoemResultModalOpen(true);
+    
+    const prompt = `请你模仿【${selectedNode.id}】的创作风格、惯用意象和体裁，以“【${poemTopic}】”为题，创作一首诗（或词）。要求：完全契合该诗人的艺术特色，并简单用一句话解释为什么这样写符合他的风格。`;
+    
+    let currentPoem = '';
+    await streamAiResponse(prompt, (chunk) => {
+      currentPoem += chunk;
+      setAiPoemContent(currentPoem);
+    }, (err) => {
+      if (err !== 'CONFIG_REQUIRED' && currentPoem === '') {
+        setAiPoemContent('创作失败，未接通灵韵...请检查配置。');
+      } else if (err === 'CONFIG_REQUIRED') {
+        setIsPoemResultModalOpen(false);
+      }
+    });
+    setIsPoeming(false);
+  }, [selectedNode, poemTopic, llmConfig]);
+
+  const handleGlobalPoem = useCallback(async () => {
+    if (!globalPoemParams.topic) return;
+    setIsGlobalPoemModalOpen(false);
+    setIsGlobalPoeming(true);
+    setGlobalPoemContent('');
+    setIsGlobalPoemResultOpen(true);
+    
+    const prompt = `你是一个精通中国古典诗词的 AI 诗仙。请根据以下设定创作一首古体诗或词：\n朝代基调：【${globalPoemParams.dynasty}】\n情感倾向：【${globalPoemParams.emotion}】\n主题：【${globalPoemParams.topic}】\n要求：平仄押韵，意境深远，并给出简短的创作赏析。`;
+    
+    let currentPoem = '';
+    await streamAiResponse(prompt, (chunk) => {
+      currentPoem += chunk;
+      setGlobalPoemContent(currentPoem);
+    }, (err) => {
+      if (err !== 'CONFIG_REQUIRED' && currentPoem === '') {
+        setGlobalPoemContent('创作失败，未接通灵韵...请检查配置。');
+      } else if (err === 'CONFIG_REQUIRED') {
+        setIsGlobalPoemResultOpen(false);
+      }
+    });
+    setIsGlobalPoeming(false);
+  }, [globalPoemParams, llmConfig]);
+
+  const handleGame = useCallback(async () => {
+    if (!gameInput.trim() || isGaming) return;
+    
+    const newUserMsg = { isUser: true, text: gameInput };
+    const newHistory = [...gameHistory, newUserMsg];
+    setGameHistory(newHistory);
+    setGameInput('');
+    setIsGaming(true);
+    
+    // Add a placeholder for AI's response
+    setGameHistory(prev => [...prev, { isUser: false, text: '' }]);
+    
+    const historyText = newHistory.map(h => `${h.isUser ? '我' : 'AI'}: ${h.text}`).join('\n');
+    
+    const prompt = `你是一个精通中国古典诗词的AI飞花令高手。我们正在进行飞花令（或者诗词对答）游戏。\n以下是我们的历史对话：\n${historyText}\n请你根据我最后一句说出的诗句，对答一句（确保包含同样的主题字或继续接龙），或者如果我只是闲聊，请用诗意的语言引导我开始游戏。\n回答要求：\n1. 只给出你的对答，不要有多余的解释，除非你想指出我用错了。\n2. 保持古风，言简意赅。`;
+
+    let currentResponse = '';
+    await streamAiResponse(prompt, (chunk) => {
+      currentResponse += chunk;
+      setGameHistory(prev => {
+        const next = [...prev];
+        next[next.length - 1].text = currentResponse;
+        return next;
+      });
+    }, (err) => {
+      if (err !== 'CONFIG_REQUIRED' && currentResponse === '') {
+        setGameHistory(prev => {
+          const next = [...prev];
+          next[next.length - 1].text = '飞花令连接中断...请检查网络。';
+          return next;
+        });
+      }
+    });
+    setIsGaming(false);
+  }, [gameInput, gameHistory, isGaming, llmConfig]);
+
+  const handleGenerateScene = useCallback(async (work: {title: string, content: string}) => {
+    setIsSceneModalOpen(true);
+    setIsSceneGenerating(true);
+    setScenePrompt('');
+    
+    const prompt = `你是一个专业的电影美术指导和AI绘画提示词（Prompt）专家。请根据以下诗词，为你心中的一幅画幅或者几个分镜头构思精美的视觉画面，并写出详细的画面描述和英文提示词（包括主体、背景、色彩风格、灯光、材质等）：\n【${work.title}】\n${work.content}\n\n要求：\n1. 中英文对照，提取诗中最具画面感的意象。\n2. 画风偏古风、数字艺术或高级水墨。\n3. 直接输出描述及Prompt。`;
+
+    let currentPrompt = '';
+    await streamAiResponse(prompt, (chunk) => {
+      currentPrompt += chunk;
+      setScenePrompt(currentPrompt);
+    }, (err) => {
+      if (err !== 'CONFIG_REQUIRED' && currentPrompt === '') {
+        setScenePrompt('画境重构失败...请检查神枢配置。');
+      } else if (err === 'CONFIG_REQUIRED') {
+        setIsSceneModalOpen(false);
+      }
+    });
+    setIsSceneGenerating(false);
+  }, [llmConfig]);
+
+  const handleChat = useCallback(async () => {
+    if (!chatParticipantA || !chatParticipantB || !chatTopic) return;
+    setIsChatModalOpen(false);
+    setIsChatting(true);
+    setAiChatContent('');
+    setIsChatResultOpen(true);
+    
+    const prompt = `你是一个深谙中国历史和古典文学的剧作者。请模拟【${chatParticipantA}】和【${chatParticipantB}】两位文豪，跨越时空，就“${chatTopic}”展开一场精彩的对话。\n要求：\n1. 请交替发言，例如格式为：\n${chatParticipantA}：……\n${chatParticipantB}：……\n2. 对话要符合他们各自的历史背景、性格特点和文学风格。\n3. 语言以半文半白或富有诗意的现代文为主，字数在500字左右。`;
+    
+    let currentChat = '';
+    await streamAiResponse(prompt, (chunk) => {
+      currentChat += chunk;
+      setAiChatContent(currentChat);
+    }, (err) => {
+      if (err !== 'CONFIG_REQUIRED' && currentChat === '') {
+        setAiChatContent('时空虫洞开启失败...请检查配置。');
+      } else if (err === 'CONFIG_REQUIRED') {
+        setIsChatResultOpen(false);
+      }
+    });
+    setIsChatting(false);
+  }, [chatParticipantA, chatParticipantB, chatTopic, llmConfig]);
 
   return (
     <main className={`relative w-screen h-screen overflow-hidden font-sans selection:bg-dopa-pink/30 transition-colors duration-700 ${viewMode === 'day' ? 'bg-[#FFFFFF]' : 'bg-[#0B0B1E]'}`}>
@@ -497,6 +701,17 @@ ${selectedWork.content}
 
           <div className="flex items-center gap-4">
             <div className="hidden lg:flex items-center gap-8 text-[11px] font-black tracking-[0.1em] uppercase">
+              {/* Search Bar in Header - Desktop */}
+              <div className="relative group w-64 xl:w-80">
+                <input 
+                  type="text"
+                  placeholder="搜索文豪..."
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="w-full bg-slate-50 border-[2px] border-clay-dark rounded-xl px-10 py-2 text-[12px] font-black focus:outline-none focus:ring-4 focus:ring-dopa-blue/10 transition-all placeholder:text-slate-400 text-clay-dark shadow-[2px_2px_0_#1E1B4B]"
+                />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-clay-dark/30 group-focus-within:text-dopa-blue transition-colors" size={14} />
+              </div>
+
               <button 
                 onClick={() => setViewMode(viewMode === 'day' ? 'night' : 'day')}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl border-[2px] border-clay-dark shadow-[3px_3px_0_#1E1B4B] transition-all active:shadow-none active:translate-x-0.5 active:translate-y-0.5 ${
@@ -551,12 +766,11 @@ ${selectedWork.content}
                 initial={{ x: -100, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -100, opacity: 0 }}
-                className="pointer-events-auto h-full w-fit"
+                className="pointer-events-auto h-full max-h-[calc(100vh-140px)] w-fit overflow-y-auto scrollbar-hide no-scrollbar pb-20 px-1"
               >
                 <Sidebar 
                   currentDynasty={dynasty}
                   onDynastyChange={setDynasty}
-                  onSearch={handleSearch}
                   isRotating={isRotating}
                   toggleRotate={() => setIsRotating(!isRotating)}
                   onFlip={resetView}
@@ -573,6 +787,9 @@ ${selectedWork.content}
                   onShowSettings={() => setShowSettings(true)}
                   showContemporary={showContemporary}
                   onToggleContemporary={() => setShowContemporary(v => !v)}
+                  onOpenGlobalPoem={() => { if (isGlobalPoeming) setIsGlobalPoemResultOpen(true); else setIsGlobalPoemModalOpen(true); }}
+                  onOpenChat={() => { if (isChatting) setIsChatResultOpen(true); else setIsChatModalOpen(true); }}
+                  onOpenGame={() => setIsGameModalOpen(true)}
                 />
               </motion.div>
             )}
@@ -631,11 +848,10 @@ ${selectedWork.content}
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide no-scrollbar pb-20">
                   <Sidebar
                     currentDynasty={dynasty}
                     onDynastyChange={(d) => { setDynasty(d); setMobileMenuOpen(false); }}
-                    onSearch={handleSearch}
                     isRotating={isRotating}
                     toggleRotate={() => setIsRotating(!isRotating)}
                     onFlip={() => { resetView(); setMobileMenuOpen(false); }}
@@ -653,6 +869,9 @@ ${selectedWork.content}
                     onShowSettings={() => setShowSettings(true)}
                     showContemporary={showContemporary}
                     onToggleContemporary={() => setShowContemporary(v => !v)}
+                    onOpenGlobalPoem={() => { if (isGlobalPoeming) setIsGlobalPoemResultOpen(true); else setIsGlobalPoemModalOpen(true); setMobileMenuOpen(false); }}
+                    onOpenChat={() => { if (isChatting) setIsChatResultOpen(true); else setIsChatModalOpen(true); setMobileMenuOpen(false); }}
+                    onOpenGame={() => { setIsGameModalOpen(true); setMobileMenuOpen(false); }}
                   />
                 </div>
               </motion.div>
@@ -706,6 +925,24 @@ ${selectedWork.content}
                     <p className="text-[11px] sm:text-[12px] text-clay-dark leading-relaxed font-bold">
                       {selectedNode.desc || "这位诗人的创作跨越了时代的鸿沟，其作品在中华文化脉络中具有深远的意义。"}
                     </p>
+                  </div>
+
+                  {/* AI Quick Actions */}
+                  <div className="flex gap-2 mb-4">
+                    <button
+                      onClick={handleDetailAnalysis}
+                      className="flex-1 px-3 py-2 bg-dopa-blue/10 hover:bg-dopa-blue/20 text-dopa-blue border-[2px] border-dopa-blue/30 hover:border-dopa-blue rounded-xl font-[900] text-[10px] sm:text-xs transition-colors flex items-center justify-center gap-1.5 active:scale-95"
+                    >
+                      <Sparkles size={14} className={isDetailing ? 'animate-spin' : 'animate-pulse'} />
+                      <span>{isDetailing ? '查看流体...' : '✨ 展开讲讲'}</span>
+                    </button>
+                    <button
+                      onClick={() => { if (isPoeming) setIsPoemResultModalOpen(true); else { setPoemTopic(''); setIsPoemInputModalOpen(true); } }}
+                      className="flex-1 px-3 py-2 bg-dopa-pink/10 hover:bg-dopa-pink/20 text-dopa-pink border-[2px] border-dopa-pink/30 hover:border-dopa-pink rounded-xl font-[900] text-[10px] sm:text-xs transition-colors flex items-center justify-center gap-1.5 active:scale-95"
+                    >
+                      <BrainCircuit size={14} />
+                      <span>✍️ 模仿作诗</span>
+                    </button>
                   </div>
 
                   {/* 社交圈 - 深度连接 (Moved above works) */}
@@ -867,6 +1104,17 @@ ${selectedWork.content}
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (isSceneGenerating) setIsSceneModalOpen(true);
+                        else handleGenerateScene(selectedWork);
+                      }}
+                      className="p-2 bg-dopa-blue text-white hover:bg-dopa-blue/90 rounded-full border-[2px] border-clay-dark transition-all shadow-[2.5px_2.5px_0_#1E1B4B] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 group"
+                      title="AI 画境生成描述"
+                    >
+                      <ImagePlus size={18} className="group-hover:scale-110 transition-transform" />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
                         // Call global handleExportCard function
                         (window as any).exportPoemCard?.();
                       }}
@@ -909,11 +1157,10 @@ ${selectedWork.content}
                   <div className="mt-1 sm:mt-2 w-full sm:w-auto self-end">
                     <button 
                       onClick={handleDeepAnalysis}
-                      disabled={isAnalyzing}
-                      className="w-full sm:w-auto px-4 py-2 sm:py-2 bg-clay-dark text-white rounded-xl border-[2px] border-clay-dark shadow-[3px_3px_0_#dopa-pink] hover:translate-y-[-2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-2 text-xs font-black disabled:opacity-50"
+                      className="w-full sm:w-auto px-4 py-2 sm:py-2 bg-clay-dark text-white rounded-xl border-[2px] border-clay-dark shadow-[3px_3px_0_#dopa-pink] hover:translate-y-[-2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-2 text-xs font-black"
                     >
                       <BrainCircuit size={14} className={isAnalyzing ? 'animate-spin' : 'animate-pulse'} />
-                      <span>{isAnalyzing ? '穿越时命中...' : 'AI 深度赏析'}</span>
+                      <span>{isAnalyzing ? '查看赏析...' : 'AI 深度赏析'}</span>
                     </button>
                   </div>
                 </div>
@@ -1246,67 +1493,594 @@ ${selectedWork.content}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] bg-clay-dark/60 backdrop-blur-md pointer-events-auto"
+            onClick={() => setIsAnalysisModalOpen(false)}
+          >
+            <div className="w-full h-full flex items-center justify-center p-6 sm:p-10 box-border">
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-[#fefaf0] border-[3px] border-clay-dark rounded-2xl shadow-[12px_12px_0_#1E1B4B] w-full max-w-lg relative"
+                style={{ maxHeight: 'calc(100vh - 5rem)' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header - 固定在卡片顶部 */}
+                <div className="p-5 pb-3 flex justify-between items-start border-b-[2px] border-clay-dark/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-dopa-pink border-[2px] border-clay-dark flex items-center justify-center shadow-[3px_3px_0_#1E1B4B] shrink-0">
+                      <BrainCircuit size={22} className="text-white animate-pulse" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-[1000] text-clay-dark tracking-tight">AI 深度赏析</h3>
+                      <p className="text-[9px] font-black text-dopa-pink uppercase tracking-widest">
+                        《{selectedWork?.title}》· {selectedNode?.id}
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setIsAnalysisModalOpen(false)}
+                    className="p-2 hover:bg-dopa-pink/10 rounded-full border-[2px] border-clay-dark transition-all active:scale-95 shrink-0"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                {/* Content - 独立滚动区 */}
+                <div className="overflow-y-auto p-5" style={{ maxHeight: 'calc(100vh - 16rem)' }}>
+                  <div className="text-base font-bold text-clay-dark leading-relaxed whitespace-pre-wrap font-serif italic text-justify">
+                    {aiAnalysis.trim().replace(/^\n+/, '') || (isAnalyzing ? '正在跨越千年时空，为您呈上文豪的真意...' : '加载失败，请重试。')}
+                  </div>
+                  <div ref={(el) => el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })} />
+                </div>
+
+                {/* Footer - 固定在卡片底部 */}
+                <div className="p-4 pt-3 border-t-[2px] border-clay-dark/10 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                     <Sparkles size={14} className="text-dopa-yellow" />
+                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">
+                       智能解析引擎
+                     </span>
+                  </div>
+                  {aiAnalysis && !isAnalyzing && (
+                    <button 
+                      onClick={() => setIsAnalysisModalOpen(false)}
+                      className="px-5 py-1.5 bg-clay-dark text-white rounded-full font-black text-[9px] uppercase shadow-[3px_3px_0_#1E1B4B] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
+                    >
+                      收起画卷
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+
+      {/* AI Detail Modal (Expand) */}
+      <AnimatePresence>
+        {isDetailModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-clay-dark/60 backdrop-blur-md pointer-events-auto overflow-hidden"
+            onClick={() => setIsDetailModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.8, y: 50, opacity: 0 }}
+              className="bg-[#fefaf0] border-[4px] border-clay-dark rounded-[2rem] shadow-[16px_16px_0_#1E1B4B] max-w-lg w-[calc(100vw-2.5rem)] sm:w-full max-h-[calc(100vh-2rem)] p-6 relative overflow-hidden flex flex-col gap-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-dopa-blue/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+              <div className="flex justify-between items-start relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-dopa-blue border-[2px] border-clay-dark flex items-center justify-center shadow-[3px_3px_0_#1E1B4B]">
+                    <Sparkles size={24} className="text-white animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-[1000] text-clay-dark tracking-tighter">生平与名士交集</h3>
+                    <p className="text-[10px] font-black text-dopa-blue uppercase tracking-widest mt-0.5">
+                      文豪 {selectedNode?.id} 的星辰轨迹
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => setIsDetailModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full border-[2px] border-clay-dark transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto max-h-[50vh] scrollbar-thin relative z-10">
+                <div className="text-sm font-bold text-clay-dark leading-relaxed whitespace-pre-wrap text-justify p-1 decoration-dopa-blue/10 underline-offset-4">
+                  {aiDetailContent.trim().replace(/^\n+/, '') || (isDetailing ? '正在翻阅前尘往事...' : '加载失败')}
+                </div>
+                <div ref={(el) => el?.scrollIntoView({ behavior: 'smooth' })} />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* AI Poem Input Modal */}
+      <AnimatePresence>
+        {isPoemInputModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-clay-dark/60 backdrop-blur-md pointer-events-auto"
-            onClick={() => !isAnalyzing && setIsAnalysisModalOpen(false)}
+            onClick={() => setIsPoemInputModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white border-[3px] border-clay-dark rounded-[2rem] shadow-[12px_12px_0_#1E1B4B] max-w-sm w-[calc(100vw-2.5rem)] sm:w-full p-6 relative overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-dopa-pink border-[2px] border-clay-dark flex items-center justify-center shadow-[2px_2px_0_#1E1B4B]">
+                    <BrainCircuit size={20} className="text-white" />
+                  </div>
+                  <h3 className="text-xl font-[1000] text-clay-dark tracking-tighter">赋予灵感片段</h3>
+                </div>
+                <button onClick={() => setIsPoemInputModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full border-[2px] border-clay-dark transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <input 
+                  type="text"
+                  maxLength={10}
+                  placeholder="限制10个字，例如：赛博中秋"
+                  value={poemTopic}
+                  onChange={(e) => setPoemTopic(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border-[2px] border-clay-dark bg-slate-50 focus:bg-white transition-all font-bold text-base sm:text-sm focus:ring-4 focus:ring-dopa-pink/20"
+                />
+                <button 
+                  onClick={handleImitatePoem}
+                  disabled={!poemTopic.trim() || poemTopic.length > 10}
+                  className="w-full py-3 bg-dopa-pink text-white rounded-xl border-[2px] border-clay-dark shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all font-[1000] uppercase tracking-widest disabled:opacity-50"
+                >
+                  开始创作
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* AI Poem Result Modal */}
+      <AnimatePresence>
+        {isPoemResultModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] bg-clay-dark/60 backdrop-blur-md pointer-events-auto"
+            onClick={() => setIsPoemResultModalOpen(false)}
+          >
+            <div className="w-full h-full flex items-center justify-center p-6 sm:p-10 box-border">
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-[#fefaf0] border-[3px] border-clay-dark rounded-2xl shadow-[12px_12px_0_#1E1B4B] w-full max-w-lg relative"
+                style={{ maxHeight: 'calc(100vh - 5rem)' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="p-5 pb-3 flex justify-between items-start border-b-[2px] border-clay-dark/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-dopa-pink border-[2px] border-clay-dark flex items-center justify-center shadow-[3px_3px_0_#1E1B4B] shrink-0">
+                      <BrainCircuit size={22} className="text-white animate-pulse" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-[1000] text-clay-dark tracking-tight">《{poemTopic}》</h3>
+                      <p className="text-[9px] font-black text-dopa-pink uppercase tracking-widest">
+                        AI {selectedNode?.id} 仿作
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setIsPoemResultModalOpen(false)} 
+                    className="p-2 hover:bg-dopa-pink/10 rounded-full border-[2px] border-clay-dark transition-all active:scale-95 shrink-0"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div className="overflow-y-auto p-5" style={{ maxHeight: 'calc(100vh - 14rem)' }}>
+                  <div className="text-[15px] font-bold text-clay-dark leading-[2] whitespace-pre-wrap font-serif italic text-justify">
+                    {aiPoemContent.trim().replace(/^\n+/, '') || (isPoeming ? '落笔生风，稍候片刻...' : '加载失败')}
+                  </div>
+                  <div ref={(el) => el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })} />
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+
+      {/* Global AI Poem Input Modal */}
+      <AnimatePresence>
+        {isGlobalPoemModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-clay-dark/60 backdrop-blur-md pointer-events-auto"
+            onClick={() => setIsGlobalPoemModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white border-[3px] border-clay-dark rounded-[2rem] shadow-[12px_12px_0_#1E1B4B] max-w-sm w-[calc(100vw-2.5rem)] sm:w-full p-6 relative overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-dopa-pink border-[2px] border-clay-dark flex items-center justify-center shadow-[2px_2px_0_#1E1B4B]">
+                    <PenTool size={20} className="text-white" />
+                  </div>
+                  <h3 className="text-xl font-[1000] text-clay-dark tracking-tighter">AI 命题作诗</h3>
+                </div>
+                <button onClick={() => setIsGlobalPoemModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full border-[2px] border-clay-dark transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">朝代基调</label>
+                    <select 
+                      value={globalPoemParams.dynasty}
+                      onChange={e => setGlobalPoemParams(p => ({ ...p, dynasty: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl border-[2px] border-clay-dark bg-slate-50 font-bold text-sm focus:outline-none"
+                    >
+                      <option value="tang">盛唐</option>
+                      <option value="song">大宋</option>
+                      <option value="yuan">大元</option>
+                      <option value="ming">大明</option>
+                      <option value="qing">大清</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">词风情感</label>
+                    <select 
+                      value={globalPoemParams.emotion}
+                      onChange={e => setGlobalPoemParams(p => ({ ...p, emotion: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl border-[2px] border-clay-dark bg-slate-50 font-bold text-sm focus:outline-none"
+                    >
+                      <option value="豪放">豪放不羁</option>
+                      <option value="婉约">婉约柔情</option>
+                      <option value="咏史">咏史怀古</option>
+                      <option value="田园">山水田园</option>
+                      <option value="边塞">边塞风云</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">核心主题 (限10字)</label>
+                  <input 
+                    type="text"
+                    maxLength={10}
+                    placeholder="如：月下独酌"
+                    value={globalPoemParams.topic}
+                    onChange={(e) => setGlobalPoemParams(p => ({ ...p, topic: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl border-[2px] border-clay-dark bg-slate-50 focus:bg-white transition-all font-bold text-base sm:text-sm focus:ring-4 focus:ring-dopa-pink/20"
+                  />
+                </div>
+                <button 
+                  onClick={handleGlobalPoem}
+                  disabled={!globalPoemParams.topic.trim() || globalPoemParams.topic.length > 10}
+                  className="w-full py-3 bg-dopa-pink text-white rounded-xl border-[2px] border-clay-dark shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all font-[1000] uppercase tracking-widest disabled:opacity-50 mt-2"
+                >
+                  星辰流转，凝结诗篇
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Global AI Poem Result Modal */}
+      <AnimatePresence>
+        {isGlobalPoemResultOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-clay-dark/60 backdrop-blur-md pointer-events-auto overflow-hidden"
+            onClick={() => setIsGlobalPoemResultOpen(false)}
           >
             <motion.div
               initial={{ scale: 0.8, y: 50, rotate: -2 }}
               animate={{ scale: 1, y: 0, rotate: 0 }}
               exit={{ scale: 0.8, y: 50, opacity: 0 }}
-              className="bg-[#fefaf0] border-[4px] border-clay-dark rounded-[3rem] shadow-[20px_20px_0_#1E1B4B] max-w-lg w-full p-10 relative overflow-hidden flex flex-col gap-6"
+              className="bg-[#fefaf0] border-[4px] border-clay-dark rounded-[2rem] shadow-[20px_20px_0_#1E1B4B] max-w-lg w-[calc(100vw-2.5rem)] sm:w-full max-h-[calc(100vh-2rem)] p-6 sm:p-8 relative overflow-hidden flex flex-col gap-4"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Artistic Background Elements */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-dopa-pink/5 rounded-full -mr-16 -mt-16 blur-3xl" />
-              <div className="absolute bottom-0 left-0 w-32 h-32 bg-dopa-blue/5 rounded-full -ml-16 -mb-16 blur-3xl" />
-              
               <div className="flex justify-between items-start relative z-10">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-dopa-pink border-[3px] border-clay-dark flex items-center justify-center shadow-[4px_4px_0_#1E1B4B]">
-                    <BrainCircuit size={28} className="text-white animate-pulse" />
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-dopa-pink border-[2px] border-clay-dark flex items-center justify-center shadow-[3px_3px_0_#1E1B4B]">
+                    <PenTool size={24} className="text-white animate-pulse" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-[1000] text-clay-dark tracking-tighter">AI 深度赏析</h3>
-                    <p className="text-[10px] font-black text-dopa-pink uppercase tracking-widest mt-1">
-                      《{selectedWork?.title}》· {selectedNode?.id}
+                    <h3 className="text-xl font-[1000] text-clay-dark tracking-tighter">《{globalPoemParams.topic}》</h3>
+                    <p className="text-[10px] font-black text-dopa-pink uppercase tracking-widest mt-0.5">
+                      AI 寰宇诗作 · {globalPoemParams.emotion}
                     </p>
                   </div>
                 </div>
-                {!isAnalyzing && (
-                  <button 
-                    onClick={() => setIsAnalysisModalOpen(false)}
-                    className="p-3 hover:bg-dopa-pink/10 rounded-full border-[3px] border-clay-dark transition-all active:scale-95"
-                  >
-                    <X size={20} />
-                  </button>
-                )}
+                <button onClick={() => setIsGlobalPoemResultOpen(false)} className="p-2 hover:bg-slate-200 rounded-full border-[2px] border-clay-dark transition-colors">
+                  <X size={16} />
+                </button>
               </div>
-
-              <div className="flex-1 overflow-y-auto min-h-[300px] max-h-[60vh] scrollbar-thin relative z-10 pr-6 mr-[-8px]">
-                <div className="text-lg font-bold text-clay-dark leading-relaxed whitespace-pre-wrap font-serif italic text-justify px-2 py-4 decoration-dopa-pink/10 underline-offset-8">
-                  {aiAnalysis || (isAnalyzing ? '正在跨越千年时空，为您呈上文豪的真意...' : '加载失败，请重试。')}
+              <div className="flex-1 overflow-y-auto max-h-[60vh] scrollbar-thin relative z-10 pr-4">
+                <div className="text-[15px] font-bold text-clay-dark leading-[2] whitespace-pre-wrap font-serif italic text-justify pt-2">
+                  {globalPoemContent.trim().replace(/^\n+/, '') || (isGlobalPoeming ? '斗转星移，妙笔生花...' : '加载失败')}
                 </div>
+                <div ref={(el) => el?.scrollIntoView({ behavior: 'smooth' })} />
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-              <div className="pt-6 border-t-[3px] border-clay-dark/10 flex justify-between items-center relative z-10">
-                <div className="flex items-center gap-2 group">
-                   <Sparkles size={16} className="text-dopa-yellow group-hover:rotate-180 transition-transform duration-500" />
-                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic font-serif">
-                     由智能解析引擎驱动
-                   </span>
+      {/* AI Chat Input Modal */}
+      <AnimatePresence>
+        {isChatModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-clay-dark/60 backdrop-blur-md pointer-events-auto"
+            onClick={() => setIsChatModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white border-[3px] border-clay-dark rounded-[2rem] shadow-[12px_12px_0_#1E1B4B] max-w-sm w-[calc(100vw-2.5rem)] sm:w-full p-6 relative overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-dopa-blue border-[2px] border-clay-dark flex items-center justify-center shadow-[2px_2px_0_#1E1B4B]">
+                    <MessageSquare size={20} className="text-white" />
+                  </div>
+                  <h3 className="text-xl font-[1000] text-clay-dark tracking-tighter">跨时空圆桌</h3>
                 </div>
-                {aiAnalysis && !isAnalyzing && (
-                  <button 
-                    onClick={() => setIsAnalysisModalOpen(false)}
-                    className="px-6 py-2 bg-clay-dark text-white rounded-full font-black text-[10px] uppercase shadow-[4px_4px_0_#dopa-pink] hover:translate-y-[-2px] active:translate-y-[2px] active:shadow-none transition-all"
-                  >
-                    收起画卷
-                  </button>
-                )}
+                <button onClick={() => setIsChatModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full border-[2px] border-clay-dark transition-colors">
+                  <X size={16} />
+                </button>
               </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">文豪 A</label>
+                    <input 
+                      type="text"
+                      maxLength={5}
+                      placeholder="李白"
+                      value={chatParticipantA}
+                      onChange={(e) => setChatParticipantA(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border-[2px] border-clay-dark bg-slate-50 focus:bg-white transition-all font-bold text-base sm:text-sm focus:ring-4 focus:ring-dopa-blue/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">文豪 B</label>
+                    <input 
+                      type="text"
+                      maxLength={5}
+                      placeholder="杜甫"
+                      value={chatParticipantB}
+                      onChange={(e) => setChatParticipantB(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border-[2px] border-clay-dark bg-slate-50 focus:bg-white transition-all font-bold text-base sm:text-sm focus:ring-4 focus:ring-dopa-blue/20"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">论题 (如: 饮酒与明月)</label>
+                  <input 
+                    type="text"
+                    maxLength={20}
+                    placeholder="输入论题..."
+                    value={chatTopic}
+                    onChange={(e) => setChatTopic(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border-[2px] border-clay-dark bg-slate-50 focus:bg-white transition-all font-bold text-base sm:text-sm focus:ring-4 focus:ring-dopa-blue/20"
+                  />
+                </div>
+                <button 
+                  onClick={handleChat}
+                  disabled={!chatParticipantA.trim() || !chatParticipantB.trim() || !chatTopic.trim()}
+                  className="w-full py-3 bg-dopa-blue text-white rounded-xl border-[2px] border-clay-dark shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all font-[1000] uppercase tracking-widest disabled:opacity-50 mt-2"
+                >
+                  开启时空长谈
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* AI Chat Result Modal */}
+      <AnimatePresence>
+        {isChatResultOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-clay-dark/60 backdrop-blur-md pointer-events-auto overflow-hidden"
+            onClick={() => setIsChatResultOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.8, y: 50, opacity: 0 }}
+              className="bg-[#fefaf0] border-[4px] border-clay-dark rounded-[2rem] shadow-[20px_20px_0_#1E1B4B] max-w-lg w-[calc(100vw-2.5rem)] sm:w-full max-h-[calc(100vh-2rem)] p-6 relative overflow-hidden flex flex-col gap-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-dopa-blue/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+              <div className="flex justify-between items-start relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-dopa-blue border-[2px] border-clay-dark flex items-center justify-center shadow-[3px_3px_0_#1E1B4B]">
+                    <MessageSquare size={24} className="text-white animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-[1000] text-clay-dark tracking-tighter">
+                      {chatParticipantA} <span className="text-slate-300 mx-1">×</span> {chatParticipantB}
+                    </h3>
+                    <p className="text-[10px] font-black text-dopa-blue uppercase tracking-widest mt-0.5">
+                      论道：{chatTopic}
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => setIsChatResultOpen(false)} className="p-2 hover:bg-slate-200 rounded-full border-[2px] border-clay-dark transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto min-h-[300px] max-h-[60vh] scrollbar-thin relative z-10 pr-4">
+                <div className="text-[14px] font-bold text-clay-dark leading-[2.2] whitespace-pre-wrap text-justify pt-2 font-sans">
+                  {aiChatContent.trim().replace(/^\n+/, '') || (isChatting ? '正在接引时空涟漪，请聆听先贤之音...' : '加载失败')}
+                </div>
+                <div ref={(el) => el?.scrollIntoView({ behavior: 'smooth' })} />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* AI Poetry Game Modal */}
+      <AnimatePresence>
+        {isGameModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-clay-dark/60 backdrop-blur-md pointer-events-auto overflow-hidden"
+            onClick={() => setIsGameModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-[#fefaf0] border-[4px] border-clay-dark rounded-[2rem] shadow-[16px_16px_0_#1E1B4B] max-w-md w-[calc(100vw-2.5rem)] sm:w-full max-h-[calc(100vh-2rem)] p-6 relative overflow-hidden flex flex-col h-[70vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-dopa-green/5 rounded-full -mr-16 -mt-16 blur-3xl" />
               
-              {/* Paper Texture Overlay */}
-              <div className="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/paper-fibers.png')]" />
+              <div className="flex justify-between items-start relative z-10 mb-4 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-dopa-green border-[2px] border-clay-dark flex items-center justify-center shadow-[3px_3px_0_#1E1B4B]">
+                    <Swords size={24} className="text-white animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-[1000] text-clay-dark tracking-tighter">飞花令对决</h3>
+                    <p className="text-[10px] font-black text-dopa-green uppercase tracking-widest mt-0.5">
+                      与 AI 古人一决高下
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => setIsGameModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full border-[2px] border-clay-dark transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto scrollbar-thin relative z-10 pr-2 flex flex-col gap-4 py-2">
+                {gameHistory.length === 0 && (
+                  <div className="text-center text-slate-400 font-bold text-xs mt-10">
+                    请出题，例如：包含“月”字的诗句...
+                  </div>
+                )}
+                {gameHistory.map((msg, idx) => (
+                  <div key={idx} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] p-3 rounded-2xl border-[2px] border-clay-dark text-sm font-bold shadow-sm ${
+                      msg.isUser 
+                        ? 'bg-white text-clay-dark rounded-br-sm' 
+                        : 'bg-dopa-green/10 text-clay-dark rounded-bl-sm'
+                    }`}>
+                      {msg.text}
+                    </div>
+                  </div>
+                ))}
+                {/* Auto Scroll Anchor */}
+                <div ref={(el) => el?.scrollIntoView({ behavior: 'smooth' })} />
+              </div>
+
+              <div className="pt-4 mt-2 border-t-[2px] border-clay-dark/10 relative z-10 shrink-0 flex gap-2">
+                <input 
+                  type="text"
+                  placeholder="输入诗句..."
+                  value={gameInput}
+                  onChange={(e) => setGameInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleGame()}
+                  className="flex-1 px-4 py-3 rounded-xl border-[2px] border-clay-dark bg-white focus:bg-slate-50 transition-all font-bold text-base sm:text-sm focus:outline-none focus:ring-4 focus:ring-dopa-green/20"
+                />
+                <button 
+                  onClick={handleGame}
+                  disabled={!gameInput.trim() || isGaming}
+                  className="px-5 py-3 bg-dopa-green text-white rounded-xl border-[2px] border-clay-dark shadow-[3px_3px_0_#1E1B4B] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all font-[1000] tracking-widest disabled:opacity-50"
+                >
+                  发送
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* AI Scene Director Modal */}
+      <AnimatePresence>
+        {isSceneModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-clay-dark/60 backdrop-blur-md pointer-events-auto overflow-hidden"
+            onClick={() => setIsSceneModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: 50, rotate: 1 }}
+              animate={{ scale: 1, y: 0, rotate: 0 }}
+              exit={{ scale: 0.8, y: 50, opacity: 0 }}
+              className="bg-[#fefaf0] border-[4px] border-clay-dark rounded-[2rem] shadow-[20px_20px_0_#1E1B4B] max-w-xl w-[calc(100vw-2.5rem)] sm:w-full max-h-[calc(100vh-2rem)] p-6 relative overflow-hidden flex flex-col gap-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-dopa-blue/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+              <div className="flex justify-between items-start relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-dopa-blue border-[2px] border-clay-dark flex items-center justify-center shadow-[3px_3px_0_#1E1B4B]">
+                    <ImagePlus size={24} className="text-white animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-[1000] text-clay-dark tracking-tighter">AI 画境工坊</h3>
+                    <p className="text-[10px] font-black text-dopa-blue uppercase tracking-widest mt-0.5">
+                      解构《{selectedWork?.title}》
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => setIsSceneModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full border-[2px] border-clay-dark transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto min-h-[350px] max-h-[65vh] scrollbar-thin relative z-10 pr-4">
+                <div className="text-[14px] font-bold text-clay-dark leading-[2] whitespace-pre-wrap font-sans text-justify pt-4 selected-text-pink selection:bg-dopa-pink/30">
+                  {scenePrompt.trimStart() || (isSceneGenerating ? '正在神驰形外，勾勒绝美分镜头脚本...' : '加载失败')}
+                </div>
+                <div ref={(el) => el?.scrollIntoView({ behavior: 'smooth' })} />
+              </div>
+              <div className="text-[9px] font-black uppercase text-slate-400 text-center tracking-widest">
+                复制上方脚本可输入至 Midjourney 或类似工具生成画作
+              </div>
             </motion.div>
           </motion.div>
         )}
