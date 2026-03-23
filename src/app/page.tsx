@@ -399,7 +399,7 @@ export default function Home() {
     }
   }, [selectedWork]);
 
-  const streamAiResponse = async (prompt: string, onChunk: (text: string) => void, onError: (msg: string) => void) => {
+  const streamAiResponse = async (prompt: string, onChunk: (text: string) => void, onError: (msg: string) => void, options: { stream?: boolean } = { stream: true }) => {
     try {
       const response = await fetch('/api/ai-proxy', {
         method: 'POST',
@@ -408,7 +408,8 @@ export default function Home() {
           baseUrl: llmConfig?.baseUrl,
           apiKey: llmConfig?.apiKey,
           model: llmConfig?.model,
-          messages: [{ role: 'user', content: prompt }]
+          messages: [{ role: 'user', content: prompt }],
+          stream: options.stream
         })
       });
 
@@ -422,28 +423,52 @@ export default function Home() {
         throw new Error(data.error || 'API request failed');
       }
 
+      // Handle non-streaming response
+      if (options.stream === false) {
+        const data = await response.json();
+        const content = data.choices[0]?.message?.content || '';
+        onChunk(content);
+        return;
+      }
+
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
+      let buffer = '';
+      let accumulatedContent = '';
+      let lastUpdateTime = Date.now();
       
       if (reader) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
           
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const dataStr = line.replace('data: ', '').trim();
+            const trimmedLine = line.trim();
+            if (trimmedLine.startsWith('data: ')) {
+              const dataStr = trimmedLine.substring(6).trim();
               if (dataStr === '[DONE]') break;
               try {
                 const data = JSON.parse(dataStr);
                 const content = data.choices[0]?.delta?.content || '';
-                onChunk(content);
+                accumulatedContent += content;
+                
+                // Batch updates to UI to avoid high-frequency re-renders (every 200ms)
+                if (Date.now() - lastUpdateTime > 200) {
+                  onChunk(accumulatedContent);
+                  accumulatedContent = '';
+                  lastUpdateTime = Date.now();
+                }
               } catch (e) {}
             }
           }
+        }
+        // Final flush
+        if (accumulatedContent) {
+          onChunk(accumulatedContent);
         }
       }
     } catch (error) {
@@ -488,8 +513,7 @@ export default function Home() {
     setAiDetailContent('');
     setIsDetailModalOpen(true);
     
-    const conns = socialConnections.map((c: any) => c.node.id).join('、');
-    const prompt = `你是一位深谙中国古代文学史的学者。请详细介绍诗人【${selectedNode.id}】的生平。特别要注意，请重点讲述他与以下名士的交集与逸事：【${conns || '同时代文人'}】。要求：文辞优美、富有历史画面感、言简意赅（字数控制在500字以内）。`;
+    const prompt = `你是一位深谙中国古代文学史的学者。请详细介绍诗人【${selectedNode.id}】的生平。特别要注意，请重点讲述他的社交圈，与其他名士的交集与逸事。要求：文辞优美、富有历史画面感、言简意赅（字数控制在500字以内）。`;
     
     let currentDetail = '';
     await streamAiResponse(prompt, (chunk) => {
@@ -503,7 +527,7 @@ export default function Home() {
       }
     });
     setIsDetailing(false);
-  }, [selectedNode, socialConnections, llmConfig]);
+  }, [selectedNode, llmConfig]);
 
   const handleImitatePoem = useCallback(async () => {
     if (!selectedNode || !poemTopic) return;

@@ -31,3 +31,7 @@ next-env.d.ts
 .agent/
 .agents/
 .gemini/
+
+# ai cache
+src/data/ai-cache/
+wechat-mp/
