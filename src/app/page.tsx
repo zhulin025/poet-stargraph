@@ -7,7 +7,7 @@ import Legend from '@/components/ui/Legend';
 import { tangData } from '@/data/tang';
 import type { Node, Link } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cpu, Binary, Sparkles, X, Star, Minimize, Camera, Search, Settings, BrainCircuit, Key, Globe, Save, History, Play, Pause, ChevronRight, Timer, PenTool, MessageSquare, Swords, ImagePlus, Info } from 'lucide-react';
+import { Cpu, Binary, Sparkles, X, Star, Minimize, Camera, Search, Settings, BrainCircuit, Key, Globe, Save, History, Play, Pause, ChevronRight, Timer, PenTool, MessageSquare, Swords, ImagePlus, Info, Copy, Check } from 'lucide-react';
 
 const Stargraph = dynamic(() => import('@/components/Stargraph'), { 
   ssr: false,
@@ -29,6 +29,7 @@ export default function Home() {
   const [exportTrigger, setExportTrigger] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [viewMode, setViewMode] = useState<'day' | 'night'>('night');
@@ -617,7 +618,7 @@ export default function Home() {
     setIsSceneGenerating(true);
     setScenePrompt('');
     
-    const prompt = `你是一个专业的电影美术指导和AI绘画提示词（Prompt）专家。请根据以下诗词，为你心中的一幅画幅或者几个分镜头构思精美的视觉画面，并写出详细的画面描述和英文提示词（包括主体、背景、色彩风格、灯光、材质等）：\n【${work.title}】\n${work.content}\n\n要求：\n1. 中英文对照，提取诗中最具画面感的意象。\n2. 画风偏古风、数字艺术或高级水墨。\n3. 直接输出描述及Prompt。`;
+    const prompt = `你是一个专业的电影美术指导和AI绘画提示词（Prompt）专家。请根据以下诗词，为你心中的一幅画幅或者几个分镜头构思精美的视觉画面，并写出详细的画面描述和英文提示词（包括主体、背景、色彩风格、灯光、材质等）：\n【${work.title}】\n${work.content}\n\n要求：\n1. 中英文对照，提取诗中最具画面感的意象。\n2. 画风偏古风、数字艺术或高级水墨。\n3. **特别要求：请提炼诗中两句最精华的诗句，并构思如何将这两句诗以书法形式巧妙地融入画面之中。**\n4. 直接输出描述及Prompt。`;
 
     let currentPrompt = '';
     await streamAiResponse(prompt, (chunk) => {
@@ -898,6 +899,7 @@ export default function Home() {
                     onOpenGlobalPoem={() => { if (isGlobalPoeming) setIsGlobalPoemResultOpen(true); else setIsGlobalPoemModalOpen(true); setMobileMenuOpen(false); }}
                     onOpenChat={() => { if (isChatting) setIsChatResultOpen(true); else setIsChatModalOpen(true); setMobileMenuOpen(false); }}
                     onOpenGame={() => { setIsGameModalOpen(true); setMobileMenuOpen(false); }}
+                    onOpenAbout={() => { setIsAboutModalOpen(true); setMobileMenuOpen(false); }}
                   />
                 </div>
               </motion.div>
@@ -2190,8 +2192,25 @@ export default function Home() {
                 </div>
                 <div ref={(el) => el?.scrollIntoView({ behavior: 'smooth' })} />
               </div>
-              <div className="text-[9px] font-black uppercase text-slate-400 text-center tracking-widest">
-                复制上方脚本可输入至 Midjourney 或类似工具生成画作
+              <div className="flex flex-col gap-2 relative z-10">
+                <div className="text-[9px] font-black uppercase text-slate-400 text-center tracking-widest">
+                  复制上方脚本可输入至 Midjourney 或类似工具生成画作
+                </div>
+                <div className="flex justify-center mt-2">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(scenePrompt);
+                      setIsCopied(true);
+                      setTimeout(() => setIsCopied(false), 2000);
+                    }}
+                    className={`flex items-center gap-2 px-6 py-2 rounded-full border-[2px] border-clay-dark font-black text-xs transition-all shadow-[4px_4px_0_#1E1B4B] active:shadow-none active:translate-x-1 active:translate-y-1 ${
+                      isCopied ? 'bg-dopa-green text-white' : 'bg-white text-clay-dark hover:bg-slate-50'
+                    }`}
+                  >
+                    {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                    <span>{isCopied ? '已复制到剪贴板' : '一键复制提示词'}</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
