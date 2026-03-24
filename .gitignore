@@ -33,5 +33,4 @@ next-env.d.ts
 .gemini/
 
 # ai cache
-src/data/ai-cache/
-wechat-mp/
+
