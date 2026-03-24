@@ -59,16 +59,16 @@ export async function POST(req: NextRequest) {
       const stream = new ReadableStream({
         async start(controller) {
           const content = cachedData.content;
-          const chunkSize = 20;
+          const chunkSize = 15; // smaller chunks for smoother typing effect
           for (let i = 0; i < content.length; i += chunkSize) {
             const chunk = content.slice(i, i + chunkSize);
             const data = JSON.stringify({
               choices: [{ delta: { content: chunk } }]
             });
             controller.enqueue(encoder.encode(`data: ${data}\n\n`));
-            if (i % (chunkSize * 5) === 0) {
-              await new Promise(resolve => setTimeout(resolve, 0));
-            }
+            
+            // Add a small delay for each chunk to simulate real-time generation
+            await new Promise(resolve => setTimeout(resolve, 20));
           }
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
