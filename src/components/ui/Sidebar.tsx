@@ -22,6 +22,7 @@ interface SidebarProps {
   onOpenGlobalPoem?: () => void;
   onOpenChat?: () => void;
   onOpenGame?: () => void;
+  onOpenAbout?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -41,7 +42,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onToggleContemporary,
   onOpenGlobalPoem,
   onOpenChat,
-  onOpenGame
+  onOpenGame,
+  onOpenAbout
 }) => {
   return (
     <motion.div 
@@ -225,6 +227,19 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
+      {/* 底部极简入口 */}
+      <div className="flex justify-end px-1 mt-auto">
+        <button 
+          onClick={onOpenAbout}
+          className="p-2 text-slate-300 hover:text-clay-dark hover:bg-slate-100 rounded-lg transition-all group relative"
+          title="关于本站"
+        >
+          <Search size={14} className="opacity-0 absolute" /> {/* placeholder if needed */}
+          <div className="w-5 h-5 flex items-center justify-center border border-current rounded-md overflow-hidden">
+             <span className="text-[10px] font-black scale-90">?</span>
+          </div>
+        </button>
+      </div>
     </motion.div>
   );
 };
