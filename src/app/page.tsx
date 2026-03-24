@@ -7,7 +7,7 @@ import Legend from '@/components/ui/Legend';
 import { tangData } from '@/data/tang';
 import type { Node, Link } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cpu, Binary, Sparkles, X, Star, Minimize, Camera, Search, Settings, BrainCircuit, Key, Globe, Save, History, Play, Pause, ChevronRight, Timer, PenTool, MessageSquare, Swords, ImagePlus } from 'lucide-react';
+import { Cpu, Binary, Sparkles, X, Star, Minimize, Camera, Search, Settings, BrainCircuit, Key, Globe, Save, History, Play, Pause, ChevronRight, Timer, PenTool, MessageSquare, Swords, ImagePlus, Info } from 'lucide-react';
 
 const Stargraph = dynamic(() => import('@/components/Stargraph'), { 
   ssr: false,
@@ -28,6 +28,7 @@ export default function Home() {
   const [flipTrigger, setFlipTrigger] = useState(1);
   const [exportTrigger, setExportTrigger] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [viewMode, setViewMode] = useState<'day' | 'night'>('night');
@@ -1626,6 +1627,106 @@ export default function Home() {
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* About Modal */}
+      <AnimatePresence>
+        {isAboutModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-clay-dark/70 backdrop-blur-xl pointer-events-auto"
+            onClick={() => setIsAboutModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 30, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 30, opacity: 0 }}
+              className="bg-[#fefaf0] border-[4px] border-clay-dark rounded-[2.5rem] shadow-[24px_24px_0_#1E1B4B] max-w-xl w-full p-8 relative overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Decorative elements */}
+              <div className="absolute -top-24 -right-24 w-64 h-64 bg-dopa-pink/10 rounded-full blur-3xl" />
+              <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-dopa-blue/10 rounded-full blur-3xl" />
+              
+              <div className="relative z-10">
+                <div className="flex justify-between items-center mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-clay-dark flex items-center justify-center shadow-[4px_4px_0_#dopa-pink]">
+                      <Info size={28} className="text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-[1000] text-clay-dark tracking-tighter">关于本站</h2>
+                      <p className="text-[10px] font-black text-dopa-pink uppercase tracking-[0.2em] mt-1">Poet Stargraph / 诗人星图</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setIsAboutModalOpen(false)}
+                    className="p-3 hover:bg-slate-200 rounded-2xl border-[2px] border-clay-dark transition-all active:scale-90"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="space-y-6 text-clay-dark leading-relaxed font-serif">
+                  <p className="text-lg font-bold italic border-l-4 border-dopa-pink pl-4 py-1">
+                    让跨越千年的诗意，在星辰间重构。
+                  </p>
+                  
+                  <div className="text-sm font-medium space-y-4 text-justify opacity-90">
+                    <p>
+                      以前读诗，总觉得那是纸面上的只言片语。想要真正读懂一首诗，往往需要去翻阅诗人的生平、探寻当时的时代大背景、甚至要理清那错综复杂的文人社交圈……这些资料散落在各处，收集起来既繁琐又破碎，这种断裂感常让原有的诗意打了折扣。
+                    </p>
+                    
+                    <p className="font-bold">
+                      于是，我做了这个《诗人星图》。
+                    </p>
+                    
+                    <p>
+                      我希望把那些伟大的灵魂，从沉闷的故纸堆里“请”出来，放进这一座 3D 交互的数字星系中。在这里：
+                    </p>
+                    
+                    <ul className="space-y-3 pl-2">
+                      <li className="flex gap-3">
+                        <span className="text-dopa-pink">✨</span>
+                        <span><b>诗人不再是孤岛</b>：他们是璀璨的星辰，通过作品与交游相互连接，形成跨越时空的生命网络。</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="text-dopa-blue">🌌</span>
+                        <span><b>视角不再是平面</b>：你可以穿梭于大唐与宋朝的星云之间，一眼看透千年文脉的流动。</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="text-dopa-yellow">🤖</span>
+                        <span><b>赏析不再是负担</b>：集成了深度 AI 算法，为你实时解构意蕴、重现生平。它不仅是你的查询工具，更是你的专属文学顾问。</span>
+                      </li>
+                    </ul>
+
+                    <p className="pt-4 border-t border-clay-dark/10 text-xs italic opacity-60">
+                      这不仅是一个技术项目，更是一场沉浸式的文学巡礼。在这个数字星图里，让我们一起找回中国文化里那份最纯粹、最浪漫的共鸣。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating About Trigger */}
+      <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-3 items-end">
+        <motion.button
+          whileHover={{ scale: 1.05, x: -5 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setIsAboutModalOpen(true)}
+          className="group flex items-center gap-3 bg-white/80 backdrop-blur-md border-[3px] border-clay-dark px-4 py-2.5 rounded-2xl shadow-[6px_6px_0_#1E1B4B] hover:shadow-[2px_2px_0_#1E1B4B] hover:translate-x-[4px] hover:translate-y-[4px] transition-all"
+        >
+          <span className="text-[10px] font-black text-clay-dark uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300">About Site</span>
+          <div className="w-8 h-8 rounded-lg bg-clay-dark flex items-center justify-center text-white">
+            <Info size={18} />
+          </div>
+          <span className="text-xs font-black text-clay-dark pr-1">关于本站</span>
+        </motion.button>
+      </div>
 
       {/* AI Poem Input Modal */}
       <AnimatePresence>
