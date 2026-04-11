@@ -17,6 +17,9 @@ interface StargraphProps {
   triggerExport?: number;
   viewMode?: 'day' | 'night';
   showContemporary?: boolean;
+  // v6.0 手势控制增量（由 GestureController 注入）
+  gestureRotateDelta?: { azimuth: number; polar: number } | null;
+  gestureZoomDelta?: number | null;
 }
 
 const Stargraph: React.FC<StargraphProps> = ({
@@ -30,7 +33,9 @@ const Stargraph: React.FC<StargraphProps> = ({
   onExportFinish,
   triggerExport,
   viewMode = 'night',
-  showContemporary = true
+  showContemporary = true,
+  gestureRotateDelta,
+  gestureZoomDelta,
 }) => {
   const fgRef = useRef<ForceGraphMethods>();
 
@@ -63,6 +68,7 @@ const Stargraph: React.FC<StargraphProps> = ({
         try {
           const renderer = fgRef.current.renderer() as THREE.WebGLRenderer;
           if (renderer) {
+            renderer.setClearColor(0x000000, 0); // 确保背景完全透明
             renderer.dispose();
             renderer.forceContextLoss(); // Release the context slot back to browser
           }
@@ -86,6 +92,8 @@ const Stargraph: React.FC<StargraphProps> = ({
       }
     };
   }, []);
+
+
 
   // Sync cache with viewMode changes (to refresh text contrast)
   useEffect(() => {
@@ -316,6 +324,31 @@ const Stargraph: React.FC<StargraphProps> = ({
     }
   }, [isRotating, isHovered]);
 
+  // v6.0 手势旋转：将手部移动增量应用到 OrbitControls 方位角/极角
+  useEffect(() => {
+    if (!gestureRotateDelta || !fgRef.current) return;
+    const controls = fgRef.current.controls() as any;
+    if (!controls) return;
+    controls.azimuthAngle = (controls.azimuthAngle ?? 0) + gestureRotateDelta.azimuth;
+    controls.polarAngle = Math.max(
+      0.1,
+      Math.min(Math.PI - 0.1, (controls.polarAngle ?? Math.PI / 2) + gestureRotateDelta.polar)
+    );
+    controls.update();
+  }, [gestureRotateDelta]);
+
+  // v6.0 手势缩放：将双手捏合倍率应用到相机 Z 轴
+  useEffect(() => {
+    if (!gestureZoomDelta || !fgRef.current) return;
+    const cam = fgRef.current.camera() as THREE.PerspectiveCamera;
+    if (!cam) return;
+    const controls = fgRef.current.controls() as any;
+    // 限制缩放范围：50 ≤ z ≤ 2000
+    const newZ = Math.max(50, Math.min(2000, cam.position.z * gestureZoomDelta));
+    cam.position.setZ(newZ);
+    controls?.update();
+  }, [gestureZoomDelta]);
+
   // Sync camera on search
   useEffect(() => {
     if (searchQuery && fgRef.current) {
@@ -411,7 +444,7 @@ const Stargraph: React.FC<StargraphProps> = ({
 
   return (
     <div 
-      style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0 }}
+      style={{ width: '100vw', height: '100vh', position: 'relative' }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -483,9 +516,10 @@ const Stargraph: React.FC<StargraphProps> = ({
         nodeRelSize={10} // Increase invisible picking area
         showNavInfo={false}
         controlType="orbit"
-        rendererConfig={{ 
+        rendererConfig={{
           preserveDrawingBuffer: true,
           antialias: !isMobile,
+          alpha: true,              // 允许透明背景（手势模式下露出摄像头画面）
           powerPreference: "high-performance"
         }}
       />

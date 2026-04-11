@@ -7,9 +7,9 @@ import Legend from '@/components/ui/Legend';
 import { tangData } from '@/data/tang';
 import type { Node, Link } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cpu, Binary, Sparkles, X, Star, Minimize, Camera, Search, Settings, BrainCircuit, Key, Globe, Save, History, Play, Pause, ChevronRight, Timer, PenTool, MessageSquare, Swords, ImagePlus, Info, Copy, Check } from 'lucide-react';
+import { Cpu, Binary, Sparkles, X, Star, Minimize, Camera, Search, Settings, BrainCircuit, Key, Globe, Save, History, Play, Pause, ChevronRight, Timer, PenTool, MessageSquare, Swords, ImagePlus, Info, Copy, Check, Hand } from 'lucide-react';
 
-const Stargraph = dynamic(() => import('@/components/Stargraph'), { 
+const Stargraph = dynamic(() => import('@/components/Stargraph'), {
   ssr: false,
   loading: () => (
     <div className="fixed inset-0 flex flex-col items-center justify-center bg-dopa-bg z-[100]">
@@ -18,6 +18,15 @@ const Stargraph = dynamic(() => import('@/components/Stargraph'), {
     </div>
   )
 });
+
+// v6.0 手势控制器（懒加载，只在全屏+手势模式时挂载）
+const GestureController = dynamic(
+  () => import('@/components/gesture/GestureController').then((m) => ({ default: m.GestureController })),
+  { ssr: false }
+);
+
+// 朝代循环顺序
+const DYNASTY_ORDER: Array<'tang' | 'song' | 'yuan' | 'ming' | 'qing'> = ['tang', 'song', 'yuan', 'ming', 'qing'];
 
 export default function Home() {
   const [dynasty, setDynasty] = useState<'song' | 'tang' | 'yuan' | 'ming' | 'qing'>('tang');
@@ -34,6 +43,12 @@ export default function Home() {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [viewMode, setViewMode] = useState<'day' | 'night'>('night');
   const [showContemporary, setShowContemporary] = useState(true);
+
+  // v6.0 手势控制 States
+  const [isGestureMode, setIsGestureMode] = useState(false);
+  const [gestureRotateDelta, setGestureRotateDelta] = useState<{ azimuth: number; polar: number } | null>(null);
+  const [gestureZoomDelta, setGestureZoomDelta] = useState<number | null>(null);
+  const [showGestureTutorial, setShowGestureTutorial] = useState(false);
   
   // Timeline States
   const [isTimelineMode, setIsTimelineMode] = useState(false);
@@ -170,6 +185,51 @@ export default function Home() {
   const resetView = useCallback(() => {
     setFlipTrigger(prev => prev + 1);
   }, []);
+
+  // v6.0 手势指令分发器
+  const handleGestureCommand = useCallback((cmd: { type: string; payload?: unknown }) => {
+    switch (cmd.type) {
+      case 'ROTATE':
+        setGestureRotateDelta(cmd.payload as { azimuth: number; polar: number });
+        // 每帧结束后重置，避免持续累积
+        setTimeout(() => setGestureRotateDelta(null), 80);
+        break;
+      case 'ZOOM':
+        setGestureZoomDelta(cmd.payload as number);
+        setTimeout(() => setGestureZoomDelta(null), 80);
+        break;
+      case 'SELECT_NODE': {
+        const nodeId = cmd.payload as string;
+        const node = currentData.nodes.find((n: any) => n.id === nodeId);
+        if (node) setSelectedNode(node);
+        break;
+      }
+      case 'NEXT_DYNASTY': {
+        const idx = DYNASTY_ORDER.indexOf(dynasty);
+        const next = DYNASTY_ORDER[(idx + 1) % DYNASTY_ORDER.length];
+        setDynasty(next);
+        break;
+      }
+      case 'PREV_DYNASTY': {
+        const idx = DYNASTY_ORDER.indexOf(dynasty);
+        const prev = DYNASTY_ORDER[(idx - 1 + DYNASTY_ORDER.length) % DYNASTY_ORDER.length];
+        setDynasty(prev);
+        break;
+      }
+      case 'RESET_VIEW':
+        resetView();
+        break;
+      case 'TOGGLE_ROTATE':
+        setIsRotating((r) => !r);
+        break;
+      case 'TOGGLE_FULLSCREEN':
+        setIsFullScreen((f) => !f);
+        break;
+      case 'TOGGLE_TUTORIAL':
+        setShowGestureTutorial((v) => !v);
+        break;
+    }
+  }, [currentData, dynasty, resetView]);
 
   const handleSearch = useCallback((q: string) => {
     setSearchQuery(q);
@@ -658,9 +718,18 @@ export default function Home() {
   }, [chatParticipantA, chatParticipantB, chatTopic, llmConfig]);
 
   return (
-    <main className={`relative w-screen h-screen overflow-hidden font-sans selection:bg-dopa-pink/30 transition-colors duration-700 ${viewMode === 'day' ? 'bg-[#FFFFFF]' : 'bg-[#0B0B1E]'}`}>
+    <main className={`relative w-screen h-screen overflow-hidden font-sans selection:bg-dopa-pink/30 ${isGestureMode ? 'bg-transparent' : `transition-colors duration-700 ${viewMode === 'day' ? 'bg-[#FFFFFF]' : 'bg-[#0B0B1E]'}`}`}>
+      {/* v6.0 手势控制器 (位于最底层以提供背景) */}
+      <GestureController
+        isActive={isGestureMode && isFullScreen}
+        onCommand={handleGestureCommand}
+        showTutorial={showGestureTutorial}
+        onToggleTutorial={() => setShowGestureTutorial((v) => !v)}
+        nodeScreenPositions={[]} // 默认为空，如需精确点击可在此注入汇总坐标
+      />
+
       {/* 3D Engine Layer - Fixed Fullscreen */}
-      <div className="fixed inset-0 z-0">
+      <div className="fixed inset-0 z-[5]">
         <Stargraph
           data={filteredGraphData}
           isRotating={isRotating}
@@ -673,11 +742,13 @@ export default function Home() {
           onExportFinish={() => setExportTrigger(0)}
           viewMode={viewMode}
           showContemporary={showContemporary}
+          gestureRotateDelta={gestureRotateDelta}
+          gestureZoomDelta={gestureZoomDelta}
         />
       </div>
 
       {/* UI Overlay Layer */}
-      <div className="relative z-10 w-full h-full flex flex-col pointer-events-none p-3 sm:p-6 lg:p-8">
+      <div className="relative z-[50] w-full h-full flex flex-col pointer-events-none p-3 sm:p-6 lg:p-8">
         {/* Header - Strongly Compressed for Mobile */}
         <AnimatePresence>
           {!isFullScreen && (
@@ -1241,14 +1312,27 @@ export default function Home() {
                 </button>
               </motion.div>
 
-              {/* Bottom Unit: Exit Button */}
-              <motion.div 
+              {/* Bottom Unit: Gesture Button + Exit Button */}
+              <motion.div
                 initial={{ opacity: 0, y: 50, x: '-50%' }}
                 animate={{ opacity: 1, y: 0, x: '-50%' }}
                 exit={{ opacity: 0, y: 50, x: '-50%' }}
-                className="fixed bottom-10 left-1/2 z-[100] pointer-events-auto"
+                className="fixed bottom-10 left-1/2 z-[100] pointer-events-auto flex items-center gap-3"
               >
-                <button 
+                {/* 手势控制开关按钮 */}
+                <button
+                  onClick={() => setIsGestureMode((g) => !g)}
+                  className={`px-5 py-3 border-[2px] border-clay-dark rounded-2xl flex items-center gap-2 shadow-[4px_4px_0_#1E1B4B] font-[900] text-sm uppercase tracking-widest active:translate-x-1 active:translate-y-1 active:shadow-none transition-all ${
+                    isGestureMode
+                      ? 'bg-dopa-pink text-white animate-pulse'
+                      : 'bg-white/95 backdrop-blur-md text-clay-dark hover:bg-clay-dark hover:text-white'
+                  }`}
+                >
+                  <Hand size={18} />
+                  <span>{isGestureMode ? '手势 ON' : '启动手势'}</span>
+                </button>
+
+                <button
                   onClick={() => setIsFullScreen(false)}
                   className="px-8 py-3 bg-white/95 backdrop-blur-md border-[2px] border-clay-dark rounded-2xl flex items-center gap-3 shadow-[6px_6px_0_#1E1B4B] group hover:bg-clay-dark hover:text-white transition-all font-[900] text-sm uppercase tracking-widest active:translate-x-1 active:translate-y-1 active:shadow-none"
                 >
@@ -1256,6 +1340,8 @@ export default function Home() {
                   <span>退出沉浸全屏</span>
                 </button>
               </motion.div>
+
+
             </>
           )}
         </AnimatePresence>
