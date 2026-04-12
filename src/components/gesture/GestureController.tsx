@@ -40,16 +40,14 @@ export function GestureController({
   const handleCommand = useCallback(
     (cmd: GestureCommand) => {
       if (cmd.type === 'TOGGLE_TUTORIAL') {
-        // 仅「打开」教程，不做 toggle。关闭由用户手动点击关闭按钮完成。
-        // 这样可避免 MediaPipe 检测的抖动（Victory→None→Victory）导致教程反复闪烁。
-        if (!showTutorial) {
-          onToggleTutorial();
-        }
+        // 边缘检测已在 useGestureControl 中完成（prevGestureNameRef），
+        // 只在手势从非 Victory → Victory 时触发，持续比出不会重复触发。
+        onToggleTutorial();
         return;
       }
       onCommand(cmd);
     },
-    [onCommand, onToggleTutorial, showTutorial]
+    [onCommand, onToggleTutorial]
   );
 
   const {

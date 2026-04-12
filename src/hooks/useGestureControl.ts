@@ -28,21 +28,32 @@ const WASM_PATH = '/mediapipe/wasm';
 const GESTURE_INTERVAL_MS = 33; // ~30fps，降低操作延迟
 
 // G3 食指选中：停留确认时长
-const DWELL_DURATION_MS = 1800;
+const DWELL_DURATION_MS = 1000;
 // G3 选中后冷却时间
 const SELECT_COOLDOWN_MS = 3000;
-// G4 挥手切换朝代：冷却时间
-const SWIPE_COOLDOWN_MS = 2000;
-// G4 挥手速度阈值（归一化距离/ms）
-const SWIPE_VELOCITY_THRESHOLD = 0.0008; // ~25% 屏幕 / 300ms
-// G4 挥手判定窗口
-const SWIPE_WINDOW_MS = 300;
-// G5/G6 单次触发冷却
+// G4 切换朝代冷却（Thumb_Up/Down 边缘触发）
+const DYNASTY_COOLDOWN_MS = 1000;
+// G5/G6/G8 单次触发冷却
 const SINGLE_TRIGGER_COOLDOWN_MS = 1500;
 // G7 双手全屏：双手保持时长
 const DUAL_HOLD_MS = 800;
 // G3 食指静止半径（归一化）
 const DWELL_RADIUS = 0.03;
+// G2 进入缩放模式所需静止时长（ms）
+const ZOOM_STILL_MS = 500;
+// G2 退出缩放模式所需静止时长（ms）——与进入对称
+const ZOOM_EXIT_STILL_MS = 500;
+// G2 退出缩放后不允许立刻重入 ZOOM 的冷却时长（ms）
+const ZOOM_REENTER_COOLDOWN_MS = 1200;
+// G1/G2 模式判定：从入场位置起的累计 XY 位移超过此值 → 旋转模式
+const ROTATE_ENTER_DRIFT = 0.04;
+// G2 缩放/静止判定阈值（EMA 平滑后）：低于此值认为"没在动"
+const ZOOM_STILL_DEPTH = 0.0005; // 深度（手掌大小 delta）
+const ZOOM_STILL_XY    = 0.005;  // 横向（质心 driftXY）
+// G2 手掌大小变化缩放灵敏度
+const ZOOM_PALM_SENSITIVITY = 6;
+// G5 握拳关闭详情页冷却
+const CLOSE_PANEL_COOLDOWN_MS = 2000;
 
 interface UseGestureControlOptions {
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -93,12 +104,21 @@ export function useGestureControl({
   const dwellStartRef = useRef<number | null>(null);
   const dwellPositionRef = useRef<{ x: number; y: number } | null>(null);
   const selectCooldownRef = useRef(0);
-  const swipeCooldownRef = useRef(0);
+  const dynastyCooldownRef = useRef(0);
   const singleTriggerCooldownRef = useRef(0);
   const dualHoldStartRef = useRef<number | null>(null);
-  const prevCentroidRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const fpsFramesRef = useRef<number[]>([]);
   const prevGestureNameRef = useRef<string | null>(null);
+  const smoothedCentroidRef = useRef<{ x: number; y: number } | null>(null); // EMA平滑质心
+  // G1+G2 手掌双模式状态机
+  const openPalmModeRef = useRef<'IDLE' | 'ROTATE' | 'ZOOM'>('IDLE');
+  const openPalmStillStartRef = useRef<number | null>(null);   // 静止倒计时开始时间
+  const openPalmStillCentroidRef = useRef<{ x: number; y: number } | null>(null); // 倒计时起始质心
+  const prevPalmSizeRef = useRef<number | null>(null);         // 上一帧手掌宽度（EMA后）
+  const smoothedPalmSizeRef = useRef<number | null>(null);     // EMA平滑手掌宽度
+  const zoomExitStillStartRef = useRef<number | null>(null);   // ZOOM 退出：静止计时起点
+  const zoomReEnterCooldownRef = useRef(0);                    // ZOOM 退出后禁止重入的截止时间
+  const closePanelCooldownRef = useRef(0);
 
   const onCommandRef = useRef(onCommand);
   onCommandRef.current = onCommand;
@@ -196,50 +216,47 @@ export function useGestureControl({
         activeName = '手势介绍';
       }
 
-      // ── G6: 大拇指朝上（重置视角）────────────────────────────────
-      if (primaryGesture?.categoryName === 'Thumb_Up' && now > singleTriggerCooldownRef.current) {
+      // ── G6: ILoveYou（重置视角）──────────────────────────────────
+      // Thumb_Up 已被 G4 占用，改用 ILoveYou（拇指+食指+小指伸出）
+      if (primaryGesture?.categoryName === 'ILoveYou' && now > singleTriggerCooldownRef.current) {
         singleTriggerCooldownRef.current = now + SINGLE_TRIGGER_COOLDOWN_MS;
         emitCommand('RESET_VIEW');
         newPhase = 'TRIGGERED';
       }
 
-      // ── G5: 握拳（开关自转）──────────────────────────────────────
-      if (primaryGesture?.categoryName === 'Closed_Fist' && now > singleTriggerCooldownRef.current) {
-        singleTriggerCooldownRef.current = now + SINGLE_TRIGGER_COOLDOWN_MS;
-        emitCommand('TOGGLE_ROTATE');
+      // ── G5: 握拳（关闭诗人详情页）────────────────────────────────
+      // 边缘触发：手势从非握拳 → 握拳时才触发，持续握拳不会连射
+      if (
+        primaryGesture?.categoryName === 'Closed_Fist' &&
+        prevGestureNameRef.current !== 'Closed_Fist' &&
+        now > closePanelCooldownRef.current
+      ) {
+        closePanelCooldownRef.current = now + CLOSE_PANEL_COOLDOWN_MS;
+        emitCommand('CLOSE_PANEL');
         newPhase = 'TRIGGERED';
+        activeName = '关闭详情';
       }
 
-      // ── G4: 挥手（切换朝代）──────────────────────────────────────
-      if (
-        primaryGesture?.categoryName === 'Open_Palm' &&
-        primaryCentroid &&
-        now > swipeCooldownRef.current
-      ) {
-        if (prevCentroidRef.current) {
-          const dt = now - prevCentroidRef.current.t;
-          if (dt <= SWIPE_WINDOW_MS && dt > 0) {
-            const dx = primaryCentroid.x - prevCentroidRef.current.x;
-            const velocity = Math.abs(dx) / dt;
-            if (velocity >= SWIPE_VELOCITY_THRESHOLD) {
-              swipeCooldownRef.current = now + SWIPE_COOLDOWN_MS;
-              // 注意：摄像头画面是镜像的，右挥（用户视角）= x 减小
-              if (dx < 0) {
-                emitCommand('NEXT_DYNASTY');
-              } else {
-                emitCommand('PREV_DYNASTY');
-              }
-              newPhase = 'TRIGGERED';
-              prevCentroidRef.current = null;
-            }
-          }
+      // ── G4: Thumb_Up → 下一朝代，Thumb_Down → 上一朝代 ──────────
+      // 边缘触发：手势从非此类 → 此类时才触发，长持不会连射
+      if (now > dynastyCooldownRef.current) {
+        if (
+          primaryGesture?.categoryName === 'Thumb_Up' &&
+          prevGestureNameRef.current !== 'Thumb_Up'
+        ) {
+          dynastyCooldownRef.current = now + DYNASTY_COOLDOWN_MS;
+          emitCommand('NEXT_DYNASTY');
+          newPhase = 'TRIGGERED';
+          activeName = '下一朝代';
+        } else if (
+          primaryGesture?.categoryName === 'Thumb_Down' &&
+          prevGestureNameRef.current !== 'Thumb_Down'
+        ) {
+          dynastyCooldownRef.current = now + DYNASTY_COOLDOWN_MS;
+          emitCommand('PREV_DYNASTY');
+          newPhase = 'TRIGGERED';
+          activeName = '上一朝代';
         }
-        // 每次更新质心记录
-        if (primaryCentroid) {
-          prevCentroidRef.current = { ...primaryCentroid, t: now };
-        }
-      } else if (primaryGesture?.categoryName !== 'Open_Palm') {
-        prevCentroidRef.current = null;
       }
 
       // ── G3: 食指伸出（选中诗人节点）─────────────────────────────
@@ -251,17 +268,14 @@ export function useGestureControl({
         newPhase = 'DETECTING';
 
         if (dwellStartRef.current === null || !dwellPositionRef.current) {
-          // 开始新的停留计时
           dwellStartRef.current = now;
           dwellPositionRef.current = { ...fingerTipNorm };
         } else {
-          // 检查是否移动超出静止半径
           const moved = Math.hypot(
             fingerTipNorm.x - dwellPositionRef.current.x,
             fingerTipNorm.y - dwellPositionRef.current.y
           );
           if (moved > DWELL_RADIUS) {
-            // 重置计时
             dwellStartRef.current = now;
             dwellPositionRef.current = { ...fingerTipNorm };
           } else {
@@ -269,22 +283,16 @@ export function useGestureControl({
             dwellProgress = Math.min(elapsed / DWELL_DURATION_MS, 1);
 
             if (elapsed >= DWELL_DURATION_MS) {
-              // 触发选中：查找最近的节点
-              const nodes = nodePositionsRef.current;
-              let closest: { id: string; dist: number } | null = null;
-              for (const node of nodes) {
-                const dist = Math.hypot(fingerTipNorm.x - node.nx, fingerTipNorm.y - node.ny);
-                if (!closest || dist < closest.dist) {
-                  closest = { id: node.id, dist };
-                }
-              }
-              if (closest && closest.dist < 0.08) {
-                emitCommand('SELECT_NODE', closest.id);
-              }
+              // 触发选中：通过模拟点击让 ForceGraph3D 的射线检测处理节点查找
+              // 摄像头是镜像的，屏幕 x = 1 - fingerTipNorm.x
+              const screenX = (1 - fingerTipNorm.x) * window.innerWidth;
+              const screenY = fingerTipNorm.y * window.innerHeight;
+              emitCommand('GESTURE_TAP', { x: screenX, y: screenY });
               selectCooldownRef.current = now + SELECT_COOLDOWN_MS;
               dwellStartRef.current = null;
               dwellPositionRef.current = null;
               newPhase = 'TRIGGERED';
+              activeName = '选中节点';
             } else {
               newPhase = 'HOLDING';
             }
@@ -295,58 +303,144 @@ export function useGestureControl({
         dwellPositionRef.current = null;
       }
 
-      // ── G1: 张开手掌 + 移动（旋转星图）─────────────────────────
-      if (
-        primaryGesture?.categoryName === 'Open_Palm' &&
-        primaryCentroid &&
-        newPhase === 'IDLE' // 未被其他手势占用
-      ) {
-        // 此时 prevCentroidRef 已被 G4 处理，这里读取位移作为旋转增量
-        // 使用较小的系数避免过于灵敏
-        // G1 和 G4 共享 prevCentroid，已在 G4 块更新
-        // 发出旋转指令：将质心位移映射为旋转角度（弧度）
-        if (prevCentroidRef.current && now - prevCentroidRef.current.t < 100) {
-          const dx = primaryCentroid.x - prevCentroidRef.current.x;
-          const dy = primaryCentroid.y - prevCentroidRef.current.y;
-          const azimuth = -dx * Math.PI * 2; // 水平 → Y轴旋转
-          const polar = dy * Math.PI;         // 垂直 → X轴旋转
-          if (Math.abs(azimuth) > 0.002 || Math.abs(polar) > 0.002) {
-            emitCommand('ROTATE', { azimuth, polar });
+      // ── G1 + G2: 张开手掌（旋转 / 缩放 双模式）──────────────────
+      // 状态机：
+      //   IDLE  ─ 快速横移 (>ROTATE_TRIGGER_DRIFT) → ROTATE（立即旋转）
+      //         ─ 静止 ZOOM_STILL_MS             → ZOOM（手掌前后缩放）
+      //   ROTATE ─ 手掌消失                       → IDLE
+      //   ZOOM   ─ 横移过大 (>ZOOM_EXIT_DRIFT)    → ROTATE
+      //          ─ 手掌消失                       → IDLE
+      if (primaryGesture?.categoryName === 'Open_Palm' && primaryCentroid) {
+        // EMA 平滑质心（α=0.45，继承上一帧平滑值）
+        const prevSC = smoothedCentroidRef.current;
+        const sc = prevSC
+          ? { x: 0.45 * primaryCentroid.x + 0.55 * prevSC.x, y: 0.45 * primaryCentroid.y + 0.55 * prevSC.y }
+          : { ...primaryCentroid };
+        smoothedCentroidRef.current = sc;
+
+        // 当帧质心漂移量
+        const driftXY = prevSC ? Math.hypot(sc.x - prevSC.x, sc.y - prevSC.y) : 0;
+
+        // 手掌宽度代理深度：pts[5](食指根) → pts[17](小指根) 的距离
+        // 手越靠近摄像头，该值越大
+        const palmSize = primaryLandmarks
+          ? Math.hypot(
+              primaryLandmarks.points[5].x - primaryLandmarks.points[17].x,
+              primaryLandmarks.points[5].y - primaryLandmarks.points[17].y
+            )
+          : 0;
+
+        const palmMode = openPalmModeRef.current;
+
+        if (palmMode === 'IDLE') {
+          // 首帧：记录入场位置，启动计时
+          if (openPalmStillStartRef.current === null) {
+            openPalmStillStartRef.current = now;
+            openPalmStillCentroidRef.current = { ...sc };
+          } else {
+            // 用累计位移（非单帧 delta）判断是否在横向移动，避免 EMA 热启动噪声误触发
+            const totalDrift = openPalmStillCentroidRef.current
+              ? Math.hypot(sc.x - openPalmStillCentroidRef.current.x, sc.y - openPalmStillCentroidRef.current.y)
+              : 0;
+
+            if (totalDrift > ROTATE_ENTER_DRIFT) {
+              // 累计位移够大 → 进入旋转模式
+              openPalmModeRef.current = 'ROTATE';
+              openPalmStillStartRef.current = null;
+              openPalmStillCentroidRef.current = null;
+            } else if (now - openPalmStillStartRef.current >= ZOOM_STILL_MS) {
+              // 静止够 0.5s，且不在退出缩放的冷却期内 → 进入缩放模式
+              if (now > zoomReEnterCooldownRef.current) {
+                openPalmModeRef.current = 'ZOOM';
+                prevPalmSizeRef.current = palmSize;
+                smoothedPalmSizeRef.current = palmSize;
+                zoomExitStillStartRef.current = null;
+                openPalmStillStartRef.current = null;
+                openPalmStillCentroidRef.current = null;
+              } else {
+                // 冷却期内：重置计时，等用户下次再静止 0.5s
+                openPalmStillStartRef.current = now;
+                openPalmStillCentroidRef.current = { ...sc };
+              }
+            }
+          }
+          if (newPhase === 'IDLE') {
             newPhase = 'DETECTING';
-            activeName = '旋转星图';
+            activeName = '张开手掌';
+          }
+
+        } else if (palmMode === 'ROTATE') {
+          // 旋转模式：正常 G1 增量旋转（仅在无其他手势触发时生效）
+          if (prevSC && newPhase === 'IDLE') {
+            const dx = sc.x - prevSC.x;
+            const dy = sc.y - prevSC.y;
+            const azimuth = -dx * 3.5;
+            const polar   =  dy * 2.5;
+            if (Math.abs(azimuth) > 0.0003 || Math.abs(polar) > 0.0003) {
+              emitCommand('ROTATE', { azimuth, polar });
+              newPhase = 'DETECTING';
+              activeName = '旋转星图';
+            }
+          }
+
+        } else if (palmMode === 'ZOOM') {
+          // 缩放模式：手掌大小变化 → zoom factor
+          // 退出条件：手掌静止（深度 + XY 均不动）持续 ZOOM_EXIT_STILL_MS → 回到 IDLE
+          if (prevPalmSizeRef.current !== null && palmSize > 0) {
+            const smoothed = 0.4 * palmSize + 0.6 * (smoothedPalmSizeRef.current ?? palmSize);
+            const delta = smoothed - prevPalmSizeRef.current;
+            prevPalmSizeRef.current = smoothed;
+            smoothedPalmSizeRef.current = smoothed;
+
+            // 判断"手掌是否在动"（深度 or XY 任一超阈值 = 在动）
+            const isMoving = Math.abs(delta) > ZOOM_STILL_DEPTH || driftXY > ZOOM_STILL_XY;
+
+            if (isMoving) {
+              // 手在动 → 重置静止计时
+              zoomExitStillStartRef.current = null;
+
+              if (Math.abs(delta) > 0.0008) {
+                // 有明显深度变化 → 发缩放指令
+                const rawFactor = 1 - delta * ZOOM_PALM_SENSITIVITY;
+                const zoomFactor = Math.max(0.92, Math.min(1.08, rawFactor));
+                emitCommand('ZOOM', zoomFactor);
+                newPhase = 'DETECTING';
+                activeName = delta > 0 ? '放大' : '缩小';
+                activeRaw = 'ZOOM_PALM';
+              } else {
+                newPhase = 'DETECTING';
+                activeName = '缩放模式';
+                activeRaw = 'ZOOM_PALM';
+              }
+            } else {
+              // 手掌静止 → 开始/继续退出计时
+              if (zoomExitStillStartRef.current === null) {
+                zoomExitStillStartRef.current = now;
+              } else if (now - zoomExitStillStartRef.current >= ZOOM_EXIT_STILL_MS) {
+                // 静止满 0.5s → 退出缩放，回 IDLE，并设冷却防立刻重入
+                openPalmModeRef.current = 'IDLE';
+                prevPalmSizeRef.current = null;
+                smoothedPalmSizeRef.current = null;
+                zoomExitStillStartRef.current = null;
+                zoomReEnterCooldownRef.current = now + ZOOM_REENTER_COOLDOWN_MS;
+                openPalmStillStartRef.current = null;
+                openPalmStillCentroidRef.current = null;
+              }
+              newPhase = 'DETECTING';
+              activeName = '缩放模式';
+              activeRaw = 'ZOOM_PALM';
+            }
           }
         }
-      }
-
-      // ── G2: 双手捏合/展开（缩放）────────────────────────────────
-      if (leftLandmarks && rightLandmarks) {
-        const leftThumb = leftLandmarks.points[4];
-        const leftIndex = leftLandmarks.points[8];
-        const rightThumb = rightLandmarks.points[4];
-        const rightIndex = rightLandmarks.points[8];
-
-        // 用双手食指尖距离作为缩放基准
-        const dist = Math.hypot(
-          rightIndex.x - leftIndex.x,
-          rightIndex.y - leftIndex.y
-        );
-
-        // 同时检查两手捏合（拇指-食指距离）判断是否在"捏"
-        const leftPinch = Math.hypot(leftThumb.x - leftIndex.x, leftThumb.y - leftIndex.y);
-        const rightPinch = Math.hypot(rightThumb.x - rightIndex.x, rightThumb.y - rightIndex.y);
-
-        // 仅当两手都在捏合状态时才触发缩放
-        if (leftPinch < 0.08 && rightPinch < 0.08) {
-          // 用距离映射为缩放倍率（中心距离作为基准）
-          // dist 约在 0.1-0.6 之间，映射到 0.8-1.2 的缩放倍率
-          const zoomFactor = 1 + (dist - 0.3) * 0.5;
-          if (Math.abs(zoomFactor - 1) > 0.005) {
-            emitCommand('ZOOM', zoomFactor);
-            newPhase = 'DETECTING';
-            activeName = dist > 0.3 ? '放大' : '缩小';
-            activeRaw = 'PINCH';
-          }
-        }
+      } else {
+        // 手掌消失 → 全部重置（冷却期保留，防止立刻重入 ZOOM）
+        openPalmModeRef.current = 'IDLE';
+        openPalmStillStartRef.current = null;
+        openPalmStillCentroidRef.current = null;
+        prevPalmSizeRef.current = null;
+        smoothedPalmSizeRef.current = null;
+        smoothedCentroidRef.current = null;
+        zoomExitStillStartRef.current = null;
       }
 
 

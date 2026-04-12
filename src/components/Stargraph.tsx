@@ -5,6 +5,14 @@ import ForceGraph3D, { ForceGraphMethods } from 'react-force-graph-3d';
 import * as THREE from 'three';
 import { Node, Link, GraphData } from '../types';
 
+/** v6.0 命令式手势 API，由 page.tsx 持有 ref，绕开 React 状态管道实现零延迟旋转 */
+export interface GestureApi {
+  /** 叠加旋转速度（每帧自动衰减，产生惯性感） */
+  addRotateVelocity: (azimuth: number, polar: number) => void;
+  /** 立即执行缩放 */
+  addZoom: (factor: number) => void;
+}
+
 interface StargraphProps {
   data: GraphData;
   isRotating: boolean;
@@ -17,9 +25,10 @@ interface StargraphProps {
   triggerExport?: number;
   viewMode?: 'day' | 'night';
   showContemporary?: boolean;
-  // v6.0 手势控制增量（由 GestureController 注入）
-  gestureRotateDelta?: { azimuth: number; polar: number } | null;
-  gestureZoomDelta?: number | null;
+  /** v6.0 命令式手势 API ref（旋转/缩放），由外部写入，Stargraph 内部 rAF 消费 */
+  gestureApiRef?: React.MutableRefObject<GestureApi | null>;
+  /** G3 食指停留触发后的屏幕坐标（像素），Stargraph 内部用 Raycaster 命中节点 */
+  gestureSelectPos?: { x: number; y: number } | null;
 }
 
 const Stargraph: React.FC<StargraphProps> = ({
@@ -34,8 +43,8 @@ const Stargraph: React.FC<StargraphProps> = ({
   triggerExport,
   viewMode = 'night',
   showContemporary = true,
-  gestureRotateDelta,
-  gestureZoomDelta,
+  gestureApiRef,
+  gestureSelectPos,
 }) => {
   const fgRef = useRef<ForceGraphMethods>();
 
@@ -324,30 +333,140 @@ const Stargraph: React.FC<StargraphProps> = ({
     }
   }, [isRotating, isHovered]);
 
-  // v6.0 手势旋转：将手部移动增量应用到 OrbitControls 方位角/极角
-  useEffect(() => {
-    if (!gestureRotateDelta || !fgRef.current) return;
-    const controls = fgRef.current.controls() as any;
-    if (!controls) return;
-    controls.azimuthAngle = (controls.azimuthAngle ?? 0) + gestureRotateDelta.azimuth;
-    controls.polarAngle = Math.max(
-      0.1,
-      Math.min(Math.PI - 0.1, (controls.polarAngle ?? Math.PI / 2) + gestureRotateDelta.polar)
-    );
-    controls.update();
-  }, [gestureRotateDelta]);
+  // v6.0 命令式手势旋转/缩放：惯性 rAF 循环 + gestureApiRef
+  // 绕开 React 状态管道（gesture→setState→render→useEffect 链路有 2-3 帧延迟）
+  // 改为：gesture hook 直接写 velocity ref → 本循环每帧读取 → 平滑衰减
+  const velAzRef = useRef(0);
+  const velPolRef = useRef(0);
 
-  // v6.0 手势缩放：将双手捏合倍率应用到相机 Z 轴
+  // 60fps rAF 循环（只建立一次，通过 ref 读最新数据）
   useEffect(() => {
-    if (!gestureZoomDelta || !fgRef.current) return;
+    const DAMPING = 0.78;      // 每帧速度衰减系数（越小越快停）
+    const MIN_VEL = 0.00008;   // 低于此值停止计算，避免 Inf 迭代
+    let rafId: number;
+
+    const tick = () => {
+      const az = velAzRef.current;
+      const pol = velPolRef.current;
+
+      if ((Math.abs(az) > MIN_VEL || Math.abs(pol) > MIN_VEL) && fgRef.current) {
+        const cam = fgRef.current.camera() as THREE.PerspectiveCamera;
+        const controls = fgRef.current.controls() as any;
+        if (cam && controls) {
+          const target = controls.target ?? new THREE.Vector3(0, 0, 0);
+          const offset = cam.position.clone().sub(target);
+          const radius = offset.length();
+          if (radius >= 1) {
+            let theta = Math.atan2(offset.x, offset.z);
+            let phi = Math.acos(Math.max(-1, Math.min(1, offset.y / radius)));
+            theta += az;
+            phi = Math.max(0.1, Math.min(Math.PI - 0.1, phi + pol));
+            offset.set(
+              radius * Math.sin(phi) * Math.sin(theta),
+              radius * Math.cos(phi),
+              radius * Math.sin(phi) * Math.cos(theta)
+            );
+            cam.position.copy(target).add(offset);
+            cam.lookAt(target);
+            controls.update();
+          }
+        }
+        velAzRef.current *= DAMPING;
+        velPolRef.current *= DAMPING;
+      }
+
+      rafId = requestAnimationFrame(tick);
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, []); // 空依赖：循环只建立一次
+
+  // 将 API 写入外部 ref，供 page.tsx 的手势回调直接调用
+  useEffect(() => {
+    if (!gestureApiRef) return;
+    gestureApiRef.current = {
+      addRotateVelocity: (az, pol) => {
+        velAzRef.current += az;
+        velPolRef.current += pol;
+      },
+      addZoom: (factor) => {
+        if (!fgRef.current) return;
+        const cam = fgRef.current.camera() as THREE.PerspectiveCamera;
+        const controls = fgRef.current.controls() as any;
+        if (!cam || !controls) return;
+        const target = controls.target ?? new THREE.Vector3(0, 0, 0);
+        const offset = cam.position.clone().sub(target);
+        const newDist = Math.max(50, Math.min(2000, offset.length() * factor));
+        offset.setLength(newDist);
+        cam.position.copy(target).add(offset);
+        controls.update();
+      },
+    };
+    return () => { if (gestureApiRef) gestureApiRef.current = null; };
+  }, [gestureApiRef]);
+
+  // v6.0 G3 食指停留选节点：用 Three.js Raycaster 在 Stargraph 内部命中节点
+  useEffect(() => {
+    if (!gestureSelectPos || !fgRef.current) return;
     const cam = fgRef.current.camera() as THREE.PerspectiveCamera;
-    if (!cam) return;
-    const controls = fgRef.current.controls() as any;
-    // 限制缩放范围：50 ≤ z ≤ 2000
-    const newZ = Math.max(50, Math.min(2000, cam.position.z * gestureZoomDelta));
-    cam.position.setZ(newZ);
-    controls?.update();
-  }, [gestureZoomDelta]);
+    const scene = fgRef.current.scene() as THREE.Scene;
+    if (!cam || !scene) return;
+
+    // 将屏幕像素坐标转换为 NDC（归一化设备坐标，范围 [-1, 1]）
+    const ndcX = (gestureSelectPos.x / window.innerWidth) * 2 - 1;
+    const ndcY = -(gestureSelectPos.y / window.innerHeight) * 2 + 1;
+
+    const raycaster = new THREE.Raycaster();
+    // 稍微放大射线的 near 检测球，提升命中容错
+    raycaster.params.Points = { threshold: 8 };
+    raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), cam);
+
+    // three-forcegraph 将 __graphObjType = 'node' 直接挂在 Three.js 对象上
+    // 节点原始数据存在 obj.__data
+    const nodeObjects: THREE.Object3D[] = [];
+    scene.traverse((obj) => {
+      if ((obj as any).__graphObjType === 'node') {
+        nodeObjects.push(obj);
+      }
+    });
+
+    if (nodeObjects.length === 0) return;
+
+    const intersects = raycaster.intersectObjects(nodeObjects, true);
+
+    if (intersects.length > 0) {
+      // 沿父链向上找带有 __data 的节点对象
+      let hit: THREE.Object3D | null = intersects[0].object;
+      while (hit) {
+        if ((hit as any).__data) {
+          onNodeClick((hit as any).__data as Node);
+          return;
+        }
+        hit = hit.parent;
+      }
+    }
+
+    // 射线未命中时退化为最近节点（容错半径 80px）
+    // 遍历所有节点对象，找屏幕投影距离最近的
+    let closestNode: Node | null = null;
+    let closestDist = 80; // 像素阈值
+    for (const obj of nodeObjects) {
+      const nodeData = (obj as any).__data as Node | undefined;
+      if (!nodeData) continue;
+      const pos3d = new THREE.Vector3();
+      obj.getWorldPosition(pos3d);
+      pos3d.project(cam);
+      const sx = (pos3d.x + 1) / 2 * window.innerWidth;
+      const sy = (1 - pos3d.y) / 2 * window.innerHeight;
+      const dist = Math.hypot(sx - gestureSelectPos.x, sy - gestureSelectPos.y);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestNode = nodeData;
+      }
+    }
+    if (closestNode) onNodeClick(closestNode);
+  }, [gestureSelectPos, onNodeClick]);
 
   // Sync camera on search
   useEffect(() => {
@@ -460,7 +579,7 @@ const Stargraph: React.FC<StargraphProps> = ({
           const isDay = viewMode === 'day';
           // Desktop: 0.4/0.5 (contemporary), 1.0/1.8 (others)
           // Mobile: roughly revert to previous thicker style (base * 1.5)
-          const baseWidth = link.type === '同时代' ? (isDay ? 0.4 : 0.5) : (isDay ? 1.0 : 1.8);
+          const baseWidth = link.type === '同时代' ? (isDay ? 0.2 : 0.25) : (isDay ? 0.5 : 0.9);
           return isMobile ? baseWidth * 2.5 : baseWidth;
         }}
         linkColor={(link: any) => {

@@ -5,6 +5,8 @@ export type GestureCommandType =
   | 'ROTATE'           // payload: { azimuth: number; polar: number }
   | 'ZOOM'             // payload: number (multiplier, >1 放大 <1 缩小)
   | 'SELECT_NODE'      // payload: string (node id)
+  | 'GESTURE_TAP'      // payload: { x: number; y: number } 屏幕像素坐标，触发合成点击
+  | 'CLOSE_PANEL'      // 关闭诗人详情面板（握拳触发）
   | 'NEXT_DYNASTY'     // 切换到下一个朝代
   | 'PREV_DYNASTY'     // 切换到上一个朝代
   | 'RESET_VIEW'       // 重置视角
@@ -100,10 +102,10 @@ export const GESTURE_GUIDE: Array<{
   },
   {
     id: 'G2',
-    gesture: '🤌',
-    rawName: 'PINCH',
+    gesture: '🖐️',
+    rawName: 'ZOOM_PALM',
     action: '缩放星图',
-    tip: '双手同时伸出，靠近缩小、分开放大',
+    tip: '张开手掌静止 0.5 秒进入缩放模式，手掌靠近放大，远离缩小',
   },
   {
     id: 'G3',
@@ -114,24 +116,31 @@ export const GESTURE_GUIDE: Array<{
   },
   {
     id: 'G4',
-    gesture: '👋',
-    rawName: 'SWIPE',
-    action: '切换朝代',
-    tip: '快速向右挥手 → 下一朝代，向左 → 上一朝代',
+    gesture: '👍',
+    rawName: 'Thumb_Up',
+    action: '下一朝代',
+    tip: '竖起大拇指，切换到下一个朝代',
+  },
+  {
+    id: 'G4b',
+    gesture: '👎',
+    rawName: 'Thumb_Down',
+    action: '上一朝代',
+    tip: '大拇指朝下，切换到上一个朝代',
   },
   {
     id: 'G5',
     gesture: '✊',
     rawName: 'Closed_Fist',
-    action: '开关自转',
-    tip: '握拳切换星图自动旋转的开/关',
+    action: '关闭详情页',
+    tip: '握拳，关闭当前打开的诗人详情面板',
   },
   {
     id: 'G6',
-    gesture: '👍',
-    rawName: 'Thumb_Up',
+    gesture: '🤟',
+    rawName: 'ILoveYou',
     action: '重置视角',
-    tip: '竖起大拇指，星图将平滑回到初始视角',
+    tip: '比出"爱你"手势，星图平滑回到初始视角',
   },
   {
     id: 'G7',

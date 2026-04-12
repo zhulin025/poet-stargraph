@@ -1,8 +1,12 @@
 'use client';
 /**
- * GestureOverlay.tsx  v6.1
+ * GestureOverlay.tsx  v6.3
  * 只显示5个指尖发光点，无骨架连线。
  * 全屏透明 canvas，pointer-events:none。
+ *
+ * 性能优化：
+ * - gestureState 通过 ref 传入，rAF 循环只建立一次，不随 state 变化销毁重建
+ * - canvas 尺寸只在 resize 时更新，不在每帧 draw 里强制重置
  */
 
 import { useEffect, useRef } from 'react';
@@ -28,26 +32,36 @@ interface GestureOverlayProps {
 
 export function GestureOverlay({ gestureState, isActive }: GestureOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // 用于驱动脉冲动画的时间基
   const animFrameRef = useRef<number | null>(null);
-  const timeRef = useRef(0);
 
+  // 用 ref 持有最新 state，避免 rAF 闭包过期
+  const stateRef = useRef(gestureState);
+  stateRef.current = gestureState;
+
+  const isActiveRef = useRef(isActive);
+  isActiveRef.current = isActive;
+
+  // rAF 循环只建立一次，通过 ref 读取最新数据
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // 初始化 canvas 尺寸
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
     function draw(ts: number) {
-      timeRef.current = ts;
       const canvas = canvasRef.current;
       if (!canvas || !ctx) return;
 
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const gs = stateRef.current;
+      const active = isActiveRef.current;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (!isActive || gestureState.landmarks.length === 0) {
+      if (!active || gs.landmarks.length === 0) {
         animFrameRef.current = requestAnimationFrame(draw);
         return;
       }
@@ -56,14 +70,13 @@ export function GestureOverlay({ gestureState, isActive }: GestureOverlayProps) 
       const h = canvas.height;
       const pulse = (Math.sin(ts * 0.004) + 1) / 2; // 0-1 脉冲
 
-      gestureState.landmarks.forEach((hand) => {
+      gs.landmarks.forEach((hand) => {
         const pts = hand.points;
 
         FINGERTIP_INDICES.forEach((landmarkIdx, colorIdx) => {
           const pt = pts[landmarkIdx];
           if (!pt) return;
 
-          // MediaPipe 坐标已镜像（摄像头预览镜像，坐标需翻转X）
           const x = (1 - pt.x) * w;
           const y = pt.y * h;
           const color = FINGERTIP_COLORS[colorIdx];
@@ -71,7 +84,7 @@ export function GestureOverlay({ gestureState, isActive }: GestureOverlayProps) 
 
           // ── 外圈光晕（随时间脉冲）──────────────────────────
           const glowRadius = isIndexFinger
-            ? 22 + pulse * 10  // 食指更大
+            ? 22 + pulse * 10
             : 16 + pulse * 6;
           const glow = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
           glow.addColorStop(0, color + 'aa');
@@ -82,10 +95,10 @@ export function GestureOverlay({ gestureState, isActive }: GestureOverlayProps) 
           ctx.fill();
 
           // ── G3 倒计时进度环（仅食指，phase=HOLDING 时）─────
-          if (isIndexFinger && gestureState.phase === 'HOLDING' && gestureState.dwellProgress > 0) {
+          if (isIndexFinger && gs.phase === 'HOLDING' && gs.dwellProgress > 0) {
             const ringR = 26;
             ctx.beginPath();
-            ctx.arc(x, y, ringR, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * gestureState.dwellProgress);
+            ctx.arc(x, y, ringR, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * gs.dwellProgress);
             ctx.strokeStyle = '#FFE800';
             ctx.lineWidth = 3;
             ctx.lineCap = 'round';
@@ -99,7 +112,7 @@ export function GestureOverlay({ gestureState, isActive }: GestureOverlayProps) 
           ctx.fillStyle = color;
           ctx.fill();
 
-          // 白色描边让点在任何背景下都清晰可见
+          // 白色描边
           ctx.beginPath();
           ctx.arc(x, y, dotR, 0, Math.PI * 2);
           ctx.strokeStyle = 'rgba(255,255,255,0.85)';
@@ -115,9 +128,9 @@ export function GestureOverlay({ gestureState, isActive }: GestureOverlayProps) 
     return () => {
       if (animFrameRef.current !== null) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [gestureState, isActive]);
+  }, []); // ← 空依赖，rAF 循环只建立一次
 
-  // 响应式 resize
+  // resize 时更新 canvas 尺寸（不重建 rAF）
   useEffect(() => {
     const onResize = () => {
       const canvas = canvasRef.current;

@@ -6,6 +6,7 @@ import Sidebar from '@/components/ui/Sidebar';
 import Legend from '@/components/ui/Legend';
 import { tangData } from '@/data/tang';
 import type { Node, Link } from '@/types';
+import type { GestureApi } from '@/components/Stargraph';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cpu, Binary, Sparkles, X, Star, Minimize, Camera, Search, Settings, BrainCircuit, Key, Globe, Save, History, Play, Pause, ChevronRight, Timer, PenTool, MessageSquare, Swords, ImagePlus, Info, Copy, Check, Hand } from 'lucide-react';
 
@@ -28,6 +29,11 @@ const GestureController = dynamic(
 // 朝代循环顺序
 const DYNASTY_ORDER: Array<'tang' | 'song' | 'yuan' | 'ming' | 'qing'> = ['tang', 'song', 'yuan', 'ming', 'qing'];
 
+// 朝代中文名（用于切换提示）
+const DYNASTY_NAMES: Record<string, string> = {
+  tang: '唐朝', song: '宋朝', yuan: '元朝', ming: '明朝', qing: '清朝',
+};
+
 export default function Home() {
   const [dynasty, setDynasty] = useState<'song' | 'tang' | 'yuan' | 'ming' | 'qing'>('tang');
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,10 +52,16 @@ export default function Home() {
 
   // v6.0 手势控制 States
   const [isGestureMode, setIsGestureMode] = useState(false);
-  const [gestureRotateDelta, setGestureRotateDelta] = useState<{ azimuth: number; polar: number } | null>(null);
-  const [gestureZoomDelta, setGestureZoomDelta] = useState<number | null>(null);
+  const [gestureSelectPos, setGestureSelectPos] = useState<{ x: number; y: number } | null>(null);
   const [showGestureTutorial, setShowGestureTutorial] = useState(false);
-  
+  /** 命令式手势 API ref：手势 hook 直接写速度，Stargraph 内部 rAF 消费，绕开 React 状态管道 */
+  const gestureApiRef = useRef<GestureApi | null>(null);
+
+  // 朝代切换提示弹框
+  const [dynastyToast, setDynastyToast] = useState<string | null>(null);
+  const dynastyToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dynastyInitRef = useRef(false);
+
   // Timeline States
   const [isTimelineMode, setIsTimelineMode] = useState(false);
   const [currentYear, setCurrentYear] = useState(750);
@@ -67,6 +79,17 @@ export default function Home() {
     setCurrentYear(dynastyYears[dynasty].start);
     setIsPlaying(false);
   }, [dynasty, dynastyYears]);
+
+  // 朝代切换提示：跳过首次渲染，之后每次 dynasty 变化显示 2s toast
+  useEffect(() => {
+    if (!dynastyInitRef.current) {
+      dynastyInitRef.current = true;
+      return;
+    }
+    if (dynastyToastTimerRef.current) clearTimeout(dynastyToastTimerRef.current);
+    setDynastyToast(dynasty);
+    dynastyToastTimerRef.current = setTimeout(() => setDynastyToast(null), 2000);
+  }, [dynasty]);
 
   useEffect(() => {
     let interval: any;
@@ -189,14 +212,14 @@ export default function Home() {
   // v6.0 手势指令分发器
   const handleGestureCommand = useCallback((cmd: { type: string; payload?: unknown }) => {
     switch (cmd.type) {
-      case 'ROTATE':
-        setGestureRotateDelta(cmd.payload as { azimuth: number; polar: number });
-        // 每帧结束后重置，避免持续累积
-        setTimeout(() => setGestureRotateDelta(null), 80);
+      case 'ROTATE': {
+        // 直接写入 Stargraph 的速度 ref，不经过 React 状态，零延迟
+        const delta = cmd.payload as { azimuth: number; polar: number };
+        gestureApiRef.current?.addRotateVelocity(delta.azimuth, delta.polar);
         break;
+      }
       case 'ZOOM':
-        setGestureZoomDelta(cmd.payload as number);
-        setTimeout(() => setGestureZoomDelta(null), 80);
+        gestureApiRef.current?.addZoom(cmd.payload as number);
         break;
       case 'SELECT_NODE': {
         const nodeId = cmd.payload as string;
@@ -228,6 +251,17 @@ export default function Home() {
       case 'TOGGLE_TUTORIAL':
         setShowGestureTutorial((v) => !v);
         break;
+      case 'CLOSE_PANEL':
+        setSelectedNode(null);
+        setSelectedWork(null);
+        break;
+      case 'GESTURE_TAP': {
+        // 食指停留触发：将屏幕坐标传给 Stargraph，由其内部 Raycaster 命中节点
+        const pos = cmd.payload as { x: number; y: number };
+        setGestureSelectPos(pos);
+        setTimeout(() => setGestureSelectPos(null), 100);
+        break;
+      }
     }
   }, [currentData, dynasty, resetView]);
 
@@ -742,8 +776,8 @@ export default function Home() {
           onExportFinish={() => setExportTrigger(0)}
           viewMode={viewMode}
           showContemporary={showContemporary}
-          gestureRotateDelta={gestureRotateDelta}
-          gestureZoomDelta={gestureZoomDelta}
+          gestureApiRef={gestureApiRef}
+          gestureSelectPos={gestureSelectPos}
         />
       </div>
 
@@ -2236,6 +2270,28 @@ export default function Home() {
                 </button>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 朝代切换提示 Toast */}
+      <AnimatePresence>
+        {dynastyToast && (
+          <motion.div
+            key={dynastyToast}
+            initial={{ opacity: 0, y: 24, scale: 0.88 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -16, scale: 0.92 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            style={{ pointerEvents: 'none' }}
+            className="fixed top-[38%] left-1/2 -translate-x-1/2 z-[500] flex flex-col items-center gap-1"
+          >
+            <div className="bg-white/15 backdrop-blur-xl border border-white/30 rounded-2xl px-8 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.35)] flex flex-col items-center gap-0.5">
+              <span className="text-white/60 text-xs font-semibold tracking-[0.2em] uppercase">切换至</span>
+              <span className="text-white text-3xl font-black tracking-wider" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>
+                {DYNASTY_NAMES[dynastyToast]}
+              </span>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
