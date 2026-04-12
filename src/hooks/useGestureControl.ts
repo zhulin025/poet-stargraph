@@ -484,7 +484,7 @@ export function useGestureControl({
 
       // 等待 Worker 就绪
       await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('模型加载超时（30s）')), 30000);
+        const timeout = setTimeout(() => reject(new Error('模型加载超时（90s）')), 90000);
         worker.onmessage = (event: MessageEvent<WorkerOutMessage>) => {
           if (event.data.type === 'READY') {
             clearTimeout(timeout);
