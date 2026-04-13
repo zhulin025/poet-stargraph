@@ -56,6 +56,8 @@ export default function Home() {
   const [showGestureTutorial, setShowGestureTutorial] = useState(false);
   /** 命令式手势 API ref：手势 hook 直接写速度，Stargraph 内部 rAF 消费，绕开 React 状态管道 */
   const gestureApiRef = useRef<GestureApi | null>(null);
+  /** 握拳手势节点缩放比例（1=正常，0.08=握拳收入手心） */
+  const [nodeScale, setNodeScale] = useState(1);
 
   // 朝代切换提示弹框
   const [dynastyToast, setDynastyToast] = useState<string | null>(null);
@@ -254,6 +256,12 @@ export default function Home() {
       case 'CLOSE_PANEL':
         setSelectedNode(null);
         setSelectedWork(null);
+        break;
+      case 'SHRINK_NODES':
+        setNodeScale(0.08);
+        break;
+      case 'RESTORE_NODES':
+        setNodeScale(1);
         break;
       case 'GESTURE_TAP': {
         // 食指停留触发：将屏幕坐标传给 Stargraph，由其内部 Raycaster 命中节点
@@ -778,6 +786,7 @@ export default function Home() {
           showContemporary={showContemporary}
           gestureApiRef={gestureApiRef}
           gestureSelectPos={gestureSelectPos}
+          nodeScale={nodeScale}
         />
       </div>
 

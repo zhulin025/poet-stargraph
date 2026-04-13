@@ -3,14 +3,15 @@
 /** 手势指令类型 */
 export type GestureCommandType =
   | 'ROTATE'           // payload: { azimuth: number; polar: number }
-  | 'ZOOM'             // payload: number (multiplier, >1 放大 <1 缩小)
+  | 'ZOOM'             // payload: number (multiplier, <1 放大 >1 缩小)
   | 'SELECT_NODE'      // payload: string (node id)
   | 'GESTURE_TAP'      // payload: { x: number; y: number } 屏幕像素坐标，触发合成点击
-  | 'CLOSE_PANEL'      // 关闭诗人详情面板（握拳触发）
+  | 'CLOSE_PANEL'      // 关闭诗人详情面板（OK 手势触发）
   | 'NEXT_DYNASTY'     // 切换到下一个朝代
   | 'PREV_DYNASTY'     // 切换到上一个朝代
   | 'RESET_VIEW'       // 重置视角
-  | 'TOGGLE_ROTATE'    // 开关自转
+  | 'SHRINK_NODES'     // 握拳：所有节点收缩到拳心
+  | 'RESTORE_NODES'    // 张开：节点恢复原始大小
   | 'TOGGLE_FULLSCREEN'// 进/退全屏
   | 'TOGGLE_TUTORIAL'; // 显示/隐藏手势教程
 
@@ -102,17 +103,17 @@ export const GESTURE_GUIDE: Array<{
   },
   {
     id: 'G2',
-    gesture: '🖐️',
+    gesture: '🖖',
     rawName: 'ZOOM_PALM',
     action: '缩放星图',
-    tip: '张开手掌静止 0.5 秒进入缩放模式，手掌靠近放大，远离缩小',
+    tip: '四根手指伸直（拇指收拢）进入缩放模式，手前移放大、后移缩小；放下手指退出缩放',
   },
   {
     id: 'G3',
     gesture: '☝️',
     rawName: 'Pointing_Up',
     action: '选中诗人',
-    tip: '食指指向诗人节点，保持静止 1.8 秒选中',
+    tip: '食指指向诗人节点，保持静止 1 秒选中',
   },
   {
     id: 'G4',
@@ -130,10 +131,17 @@ export const GESTURE_GUIDE: Array<{
   },
   {
     id: 'G5',
+    gesture: '👌',
+    rawName: 'OK_GESTURE',
+    action: '关闭详情页',
+    tip: '比出 OK 手势（拇指与食指相触，其余三指伸直），关闭诗人详情',
+  },
+  {
+    id: 'G5b',
     gesture: '✊',
     rawName: 'Closed_Fist',
-    action: '关闭详情页',
-    tip: '握拳，关闭当前打开的诗人详情面板',
+    action: '收缩 / 展开星图',
+    tip: '握拳让所有诗人节点瞬间收入手心，张开手掌节点恢复原位',
   },
   {
     id: 'G6',

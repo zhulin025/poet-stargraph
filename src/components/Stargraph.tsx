@@ -29,6 +29,8 @@ interface StargraphProps {
   gestureApiRef?: React.MutableRefObject<GestureApi | null>;
   /** G3 食指停留触发后的屏幕坐标（像素），Stargraph 内部用 Raycaster 命中节点 */
   gestureSelectPos?: { x: number; y: number } | null;
+  /** 握拳手势节点缩放比例（1=正常，0.08=握拳收缩），Stargraph 平滑插值到目标值 */
+  nodeScale?: number;
 }
 
 const Stargraph: React.FC<StargraphProps> = ({
@@ -45,6 +47,7 @@ const Stargraph: React.FC<StargraphProps> = ({
   showContemporary = true,
   gestureApiRef,
   gestureSelectPos,
+  nodeScale = 1,
 }) => {
   const fgRef = useRef<ForceGraphMethods>();
 
@@ -332,6 +335,32 @@ const Stargraph: React.FC<StargraphProps> = ({
       }
     }
   }, [isRotating, isHovered]);
+
+  // v6.0 握拳：整体缩放（仅缩放，不平移）
+  const nodeScaleTargetRef = useRef(1);
+  nodeScaleTargetRef.current = nodeScale;
+
+  useEffect(() => {
+    let currentScale = 1;
+    let rafId: number;
+
+    const tick = () => {
+      const target = nodeScaleTargetRef.current;
+      // 收缩 α=0.18（快，握入感），恢复 α=0.12（稍慢，展开感）
+      const alpha = target < currentScale ? 0.18 : 0.12;
+      currentScale += (target - currentScale) * alpha;
+      if (Math.abs(currentScale - target) < 0.001) currentScale = target;
+
+      if (fgRef.current) {
+        fgRef.current.scene().scale.setScalar(currentScale);
+      }
+
+      rafId = requestAnimationFrame(tick);
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, []); // 只建立一次，通过 ref 读目标值
 
   // v6.0 命令式手势旋转/缩放：惯性 rAF 循环 + gestureApiRef
   // 绕开 React 状态管道（gesture→setState→render→useEffect 链路有 2-3 帧延迟）
